@@ -1,6 +1,6 @@
 using System;
 
-namespace Horizon.XmlRpc.Client
+namespace XmlRpc.Client
 {
     [AttributeUsage(AttributeTargets.Method)]
     public class XmlRpcBeginAttribute : Attribute

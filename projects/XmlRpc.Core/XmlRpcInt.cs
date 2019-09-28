@@ -1,5 +1,5 @@
 
-namespace Horizon.XmlRpc.Core
+namespace XmlRpc.Core
 {
     public class XmlRpcInt
     {

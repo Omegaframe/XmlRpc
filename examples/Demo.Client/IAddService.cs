@@ -1,7 +1,7 @@
-﻿using Horizon.XmlRpc.Client;
+﻿using XmlRpc.Client;
 using Demo.Contracts;
 
-namespace Horizon.XmlRpc.Core.ClientDemo
+namespace XmlRpc.Core.ClientDemo
 {
     public interface IAddServiceProxy : IXmlRpcProxy, IAddService
     {

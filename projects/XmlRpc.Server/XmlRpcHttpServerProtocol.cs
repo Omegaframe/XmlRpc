@@ -1,9 +1,9 @@
 using System;
 using System.IO;
 using System.Xml;
-using Horizon.XmlRpc.Core;
+using XmlRpc.Core;
 
-namespace Horizon.XmlRpc.Server
+namespace XmlRpc.Server
 {
     public class XmlRpcHttpServerProtocol : XmlRpcServerProtocol,
       IHttpRequestHandler

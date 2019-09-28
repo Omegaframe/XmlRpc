@@ -1,11 +1,11 @@
 using System;
 using System.Threading.Tasks;
-using Horizon.XmlRpc.AspNetCore.Adapter;
-using Horizon.XmlRpc.AspNetCore.Factories;
+using XmlRpc.AspNetCore.Adapter;
+using XmlRpc.AspNetCore.Factories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
-namespace Horizon.XmlRpc.AspNetCore.Routing
+namespace XmlRpc.AspNetCore.Routing
 {
     internal class ServiceRouteBuilder : IServiceRouteBuilder
     {

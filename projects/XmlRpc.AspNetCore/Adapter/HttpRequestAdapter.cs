@@ -1,9 +1,9 @@
 
 using System.IO;
-using Horizon.XmlRpc.Server;
+using XmlRpc.Server;
 using Microsoft.AspNetCore.Http;
 
-namespace Horizon.XmlRpc.AspNetCore.Adapter
+namespace XmlRpc.AspNetCore.Adapter
 {
     internal class HttpRequestAdapter : IHttpRequest
     {

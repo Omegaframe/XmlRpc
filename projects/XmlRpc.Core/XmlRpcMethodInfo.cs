@@ -1,7 +1,7 @@
 using System;
 using System.Reflection;
 
-namespace Horizon.XmlRpc.Core
+namespace XmlRpc.Core
 {
     public class XmlRpcMethodInfo : IComparable
     {

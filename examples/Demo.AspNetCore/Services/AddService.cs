@@ -1,6 +1,6 @@
 using System;
 using Demo.Contracts;
-using Horizon.XmlRpc.AspNetCore;
+using XmlRpc.AspNetCore;
 
 namespace Demo.AspNetCore.Services
 {

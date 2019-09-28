@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace Horizon.XmlRpc.Core
+namespace XmlRpc.Core
 {
     [Flags]
     public enum XmlRpcNonStandard

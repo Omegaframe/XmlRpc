@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections;
 
-namespace Horizon.XmlRpc.Core
+namespace XmlRpc.Core
 {
   public class XmlRpcStruct : Hashtable
   {

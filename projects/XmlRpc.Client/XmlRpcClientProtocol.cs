@@ -5,9 +5,9 @@ using System.Net;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using Horizon.XmlRpc.Core;
+using XmlRpc.Core;
 
-namespace Horizon.XmlRpc.Client
+namespace XmlRpc.Client
 {
     public class XmlRpcClientProtocol : Component, IXmlRpcProxy
     {

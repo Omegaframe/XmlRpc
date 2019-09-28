@@ -3,9 +3,9 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading;
-using Horizon.XmlRpc.Core;
+using XmlRpc.Core;
 
-namespace Horizon.XmlRpc.Client
+namespace XmlRpc.Client
 {
     public class XmlRpcAsyncResult : IAsyncResult
     {

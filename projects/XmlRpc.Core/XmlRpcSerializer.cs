@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Xml;
 
-namespace Horizon.XmlRpc.Core
+namespace XmlRpc.Core
 {
     struct Fault
     {

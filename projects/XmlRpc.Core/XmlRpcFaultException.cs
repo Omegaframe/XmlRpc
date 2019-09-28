@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Horizon.XmlRpc.Core
+namespace XmlRpc.Core
 {
     [Serializable]
     public class XmlRpcFaultException : ApplicationException

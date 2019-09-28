@@ -2,9 +2,9 @@ using System;
 using System.Collections;
 using System.Reflection;
 using System.Reflection.Emit;
-using Horizon.XmlRpc.Core;
+using XmlRpc.Core;
 
-namespace Horizon.XmlRpc.Client
+namespace XmlRpc.Client
 {
     public class XmlRpcProxyGen
     {

@@ -2,9 +2,9 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Text;
-using Horizon.XmlRpc.Core;
+using XmlRpc.Core;
 
-namespace Horizon.XmlRpc.Server
+namespace XmlRpc.Server
 {
     public class XmlRpcServerProtocol : SystemMethodsBase
     {

@@ -1,6 +1,6 @@
 using System;
 
-namespace Horizon.XmlRpc.Client
+namespace XmlRpc.Client
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
     public class XmlRpcUrlAttribute : Attribute

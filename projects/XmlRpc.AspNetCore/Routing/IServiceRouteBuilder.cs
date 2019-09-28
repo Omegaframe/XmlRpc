@@ -1,4 +1,4 @@
-namespace Horizon.XmlRpc.AspNetCore.Routing
+namespace XmlRpc.AspNetCore.Routing
 {
     /// <summary>
     ///     Builder for XmlRpc Service Routing.

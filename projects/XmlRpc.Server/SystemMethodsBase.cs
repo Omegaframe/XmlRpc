@@ -1,8 +1,8 @@
 using System;
 using System.Collections;
-using Horizon.XmlRpc.Core;
+using XmlRpc.Core;
 
-namespace Horizon.XmlRpc.Server
+namespace XmlRpc.Server
 {
     public class SystemMethodsBase : MarshalByRefObject
     {

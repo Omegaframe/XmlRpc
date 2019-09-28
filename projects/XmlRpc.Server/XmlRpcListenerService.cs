@@ -1,7 +1,7 @@
 using System;
 using System.Net;
 
-namespace Horizon.XmlRpc.Server
+namespace XmlRpc.Server
 {
     public abstract class XmlRpcListenerService : XmlRpcHttpServerProtocol
     {

@@ -1,9 +1,9 @@
 using System.Threading.Tasks;
-using Horizon.XmlRpc.AspNetCore.Adapter;
-using Horizon.XmlRpc.Server;
+using XmlRpc.AspNetCore.Adapter;
+using XmlRpc.Server;
 using Microsoft.AspNetCore.Http;
 
-namespace Horizon.XmlRpc.AspNetCore
+namespace XmlRpc.AspNetCore
 {
     public abstract class XmlRpcService : XmlRpcHttpServerProtocol
     {

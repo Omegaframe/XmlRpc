@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace Horizon.XmlRpc.ServerDemo
+namespace XmlRpc.ServerDemo
 {
     class Program
     {

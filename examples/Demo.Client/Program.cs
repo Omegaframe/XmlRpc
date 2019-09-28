@@ -1,7 +1,7 @@
 ﻿using System;
-using Horizon.XmlRpc.Client;
+using XmlRpc.Client;
 
-namespace Horizon.XmlRpc.Core.ClientDemo
+namespace XmlRpc.Core.ClientDemo
 {
     class Program
     {

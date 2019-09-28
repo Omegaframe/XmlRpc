@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Horizon.XmlRpc.Core
+namespace XmlRpc.Core
 {
     [AttributeUsage(AttributeTargets.Parameter)]
     public class XmlRpcParameterAttribute : Attribute

@@ -1,4 +1,4 @@
-﻿using Horizon.XmlRpc.Core;
+﻿using XmlRpc.Core;
 
 namespace Demo.Contracts
 {

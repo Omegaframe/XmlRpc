@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 
-namespace Horizon.XmlRpc.Core
+namespace XmlRpc.Core
 {
     public static class Util
     {

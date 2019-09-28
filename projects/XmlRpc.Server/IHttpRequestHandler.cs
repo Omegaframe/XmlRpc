@@ -1,4 +1,4 @@
-namespace Horizon.XmlRpc.Server
+namespace XmlRpc.Server
 {
     public interface IHttpRequestHandler
     {

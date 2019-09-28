@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Horizon.XmlRpc.Server
+namespace XmlRpc.Server
 {
     public interface IHttpResponse
     {

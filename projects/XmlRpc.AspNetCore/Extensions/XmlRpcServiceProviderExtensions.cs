@@ -1,12 +1,12 @@
 
 using System;
-using Horizon.XmlRpc.AspNetCore.Factories;
-using Horizon.XmlRpc.AspNetCore.Routing;
+using XmlRpc.AspNetCore.Factories;
+using XmlRpc.AspNetCore.Routing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Horizon.XmlRpc.AspNetCore.Extensions
+namespace XmlRpc.AspNetCore.Extensions
 {
     /// <summary>
     ///     Provides extension for working with XmlRpc.

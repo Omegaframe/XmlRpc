@@ -1,10 +1,10 @@
 
 using System.IO;
-using Horizon.XmlRpc.Server;
+using XmlRpc.Server;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
 
-namespace Horizon.XmlRpc.AspNetCore.Adapter
+namespace XmlRpc.AspNetCore.Adapter
 {
     internal class HttpResponseAdapter : IHttpResponse
     {

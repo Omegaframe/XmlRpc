@@ -1,7 +1,7 @@
 ﻿using Demo.Contracts;
-using Horizon.XmlRpc.Server;
+using XmlRpc.Server;
 
-namespace Horizon.XmlRpc.ServerDemo
+namespace XmlRpc.ServerDemo
 {
     internal class AddService : XmlRpcListenerService, IAddService
     {

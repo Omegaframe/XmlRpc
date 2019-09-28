@@ -1,7 +1,7 @@
 using System;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Horizon.XmlRpc.AspNetCore.Factories
+namespace XmlRpc.AspNetCore.Factories
 {
     internal class XmlRpcServiceFactory : IXmlRpcServiceFactory
     {

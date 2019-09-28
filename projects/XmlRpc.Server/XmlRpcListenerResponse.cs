@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Net;
 
-namespace Horizon.XmlRpc.Server
+namespace XmlRpc.Server
 {
     public class XmlRpcListenerResponse : IHttpResponse
     {

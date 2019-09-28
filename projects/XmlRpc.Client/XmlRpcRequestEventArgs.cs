@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Horizon.XmlRpc.Client
+namespace XmlRpc.Client
 {
     public class XmlRpcRequestEventArgs : EventArgs
     {

@@ -1,4 +1,4 @@
-namespace Horizon.XmlRpc.AspNetCore.Factories
+namespace XmlRpc.AspNetCore.Factories
 {
     internal interface IXmlRpcServiceFactory
     {

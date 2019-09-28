@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
-namespace Horizon.XmlRpc.Core
+namespace XmlRpc.Core
 {
     public enum XmlRpcType
     {
