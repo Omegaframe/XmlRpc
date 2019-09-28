@@ -1,4 +1,6 @@
-﻿using XmlRpc.Core;
+﻿
+
+using XmlRpc.Client.Attributes;
 
 namespace Demo.Contracts
 {

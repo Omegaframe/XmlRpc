@@ -6,6 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\projects\XmlRpc.Core\XmlRpc.Core.csproj" />
+    <ProjectReference Include="..\..\projects\XmlRpc.Client\XmlRpc.Client.csproj" />
   </ItemGroup>
 </Project>

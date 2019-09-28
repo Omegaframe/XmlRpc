@@ -5,7 +5,9 @@ using System.Net;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using XmlRpc.Core;
+using XmlRpc.Client.Attributes;
+using XmlRpc.Client.Exceptions;
+using XmlRpc.Client.Model;
 
 namespace XmlRpc.Client
 {
@@ -128,7 +130,7 @@ namespace XmlRpc.Client
                     {
                         reqStream = webReq.GetRequestStream();
                         serStream.Position = 0;
-                        Util.CopyStream(serStream, reqStream);
+                        serStream.CopyTo(reqStream);
                         reqStream.Flush();
                         serStream.Position = 0;
                         OnRequest(new XmlRpcRequestEventArgs(req.proxyId, req.number,
@@ -158,7 +160,7 @@ namespace XmlRpc.Client
                     else
                     {
                         deserStream = new MemoryStream(2000);
-                        Util.CopyStream(respStm, deserStream);
+                        respStm.CopyTo(deserStream);
                         deserStream.Flush();
                         deserStream.Position = 0;
                     }
@@ -166,7 +168,7 @@ namespace XmlRpc.Client
                     deserStream = MaybeDecompressStream((HttpWebResponse)webResp,
                       deserStream);
 
-                                        try
+                    try
                     {
                         XmlRpcResponse resp = ReadResponse(req, webResp, deserStream, null);
                         reto = resp.retVal;
@@ -599,7 +601,7 @@ namespace XmlRpc.Client
                     {
                         reqStream = clientResult.Request.EndGetRequestStream(asyncResult);
                         serStream.Position = 0;
-                        Util.CopyStream(serStream, reqStream);
+                        serStream.CopyTo(reqStream);
                         reqStream.Flush();
                         serStream.Position = 0;
                         clientResult.ClientProtocol.OnRequest(

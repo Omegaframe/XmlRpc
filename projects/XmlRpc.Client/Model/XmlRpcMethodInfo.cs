@@ -1,7 +1,7 @@
 using System;
 using System.Reflection;
 
-namespace XmlRpc.Core
+namespace XmlRpc.Client.Model
 {
     public class XmlRpcMethodInfo : IComparable
     {

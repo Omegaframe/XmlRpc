@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace XmlRpc.Core
+namespace XmlRpc.Client.Exceptions
 {
     [Serializable]
     public class XmlRpcFaultException : ApplicationException

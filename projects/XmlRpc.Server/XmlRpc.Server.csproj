@@ -11,6 +11,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\XmlRpc.Core\XmlRpc.Core.csproj" />
+    <ProjectReference Include="..\XmlRpc.Client\XmlRpc.Client.csproj" />
   </ItemGroup>
 </Project>

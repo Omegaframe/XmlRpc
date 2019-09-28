@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace XmlRpc.Core
+namespace XmlRpc.Client.Model
 {
     [Flags]
     public enum XmlRpcNonStandard

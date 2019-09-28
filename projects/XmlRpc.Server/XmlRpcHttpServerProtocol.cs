@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Xml;
-using XmlRpc.Core;
+using XmlRpc.Client.Attributes;
 
 namespace XmlRpc.Server
 {
@@ -42,9 +42,9 @@ namespace XmlRpc.Server
             Stream responseStream = Invoke(httpReq.InputStream);
             httpResp.ContentType = "text/xml";
             httpResp.ContentLength = responseStream.Length;
-            
+
             Stream respStm = httpResp.OutputStream;
-            Util.CopyStream(responseStream, respStm);
+            responseStream.CopyTo(respStm);
             respStm.Flush();
         }
 
@@ -61,10 +61,10 @@ namespace XmlRpc.Server
                     wrtr.Flush();
                     httpResp.ContentType = "text/html";
                     httpResp.ContentLength = stm.Length;
-                    
+
                     stm.Position = 0;
                     Stream respStm = httpResp.OutputStream;
-                    Util.CopyStream(stm, respStm);
+                    stm.CopyTo(respStm);
                     respStm.Flush();
                     httpResp.StatusCode = 200;
                 }

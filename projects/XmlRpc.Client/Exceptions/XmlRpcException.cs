@@ -1,6 +1,6 @@
 using System;
 
-namespace XmlRpc.Core
+namespace XmlRpc.Client.Exceptions
 {
     public class XmlRpcException : ApplicationException
     {

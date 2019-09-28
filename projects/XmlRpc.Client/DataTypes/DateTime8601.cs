@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace XmlRpc.Core
+namespace XmlRpc.Client.DataTypes
 {
     public static class DateTime8601
     {

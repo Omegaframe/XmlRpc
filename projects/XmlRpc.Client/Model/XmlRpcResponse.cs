@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace XmlRpc.Core
+namespace XmlRpc.Client.Model
 {
     public class XmlRpcResponse
     {

@@ -3,8 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using XmlRpc.Client.Attributes;
+using XmlRpc.Client.DataTypes;
+using XmlRpc.Client.Exceptions;
 
-namespace XmlRpc.Core
+namespace XmlRpc.Client.Model
 {
     public enum XmlRpcType
     {

@@ -1,19 +1,18 @@
 
-namespace XmlRpc.Core
+namespace XmlRpc.Client.DataTypes
 {
-    public class XmlRpcDouble
+    public class XmlRpcInt
     {
-        private double _value;
+        private int _value;
 
-        public XmlRpcDouble()
+        public XmlRpcInt()
         {
-            this._value = 0;
+            _value = 0;
         }
 
-        public XmlRpcDouble(
-          double val)
+        public XmlRpcInt(int val)
         {
-            this._value = val;
+            _value = val;
         }
 
         public override string ToString()
@@ -29,15 +28,15 @@ namespace XmlRpc.Core
         public override bool Equals(
           object o)
         {
-            if (o == null || !(o is XmlRpcDouble))
+            if (o == null || !(o is XmlRpcInt))
                 return false;
-            XmlRpcDouble dbl = o as XmlRpcDouble;
-            return dbl._value == _value;
+            XmlRpcInt dbl = o as XmlRpcInt;
+            return (dbl._value == _value);
         }
 
         public static bool operator ==(
-          XmlRpcDouble xi,
-          XmlRpcDouble xj)
+          XmlRpcInt xi,
+          XmlRpcInt xj)
         {
             if (((object)xi) == null && ((object)xj) == null)
                 return true;
@@ -48,20 +47,20 @@ namespace XmlRpc.Core
         }
 
         public static bool operator !=(
-          XmlRpcDouble xi,
-          XmlRpcDouble xj)
+          XmlRpcInt xi,
+          XmlRpcInt xj)
         {
             return !(xi == xj);
         }
 
-        public static implicit operator double(XmlRpcDouble x)
+        public static implicit operator int(XmlRpcInt x)
         {
             return x._value;
         }
 
-        public static implicit operator XmlRpcDouble(double x)
+        public static implicit operator XmlRpcInt(int x)
         {
-            return new XmlRpcDouble(x);
+            return new XmlRpcInt(x);
         }
     }
 }

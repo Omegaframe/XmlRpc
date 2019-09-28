@@ -1,6 +1,6 @@
 using System;
 
-namespace XmlRpc.Client
+namespace XmlRpc.Client.Attributes
 {
     [AttributeUsage(AttributeTargets.Method)]
     public class XmlRpcBeginAttribute : Attribute

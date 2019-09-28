@@ -1,6 +1,6 @@
 using System;
 
-namespace XmlRpc.Client
+namespace XmlRpc.Client.Attributes
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
     public class XmlRpcUrlAttribute : Attribute

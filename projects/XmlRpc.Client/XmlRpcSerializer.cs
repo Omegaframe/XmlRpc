@@ -5,8 +5,12 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Xml;
+using XmlRpc.Client.Attributes;
+using XmlRpc.Client.DataTypes;
+using XmlRpc.Client.Exceptions;
+using XmlRpc.Client.Model;
 
-namespace XmlRpc.Core
+namespace XmlRpc.Client
 {
     struct Fault
     {
@@ -455,7 +459,7 @@ namespace XmlRpc.Core
             if (AllowInvalidHTTPContent)
             {
                 Stream newStm = new MemoryStream();
-                Util.CopyStream(stm, newStm);
+                stm.CopyTo(newStm);
                 stm = newStm;
                 stm.Position = 0;
                 while (true)

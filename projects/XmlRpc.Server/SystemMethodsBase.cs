@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
-using XmlRpc.Core;
+using XmlRpc.Client.Attributes;
+using XmlRpc.Client.Exceptions;
+using XmlRpc.Client.Model;
 
 namespace XmlRpc.Server
 {

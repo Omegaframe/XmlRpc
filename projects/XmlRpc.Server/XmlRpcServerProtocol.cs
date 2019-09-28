@@ -2,7 +2,10 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Text;
-using XmlRpc.Core;
+using XmlRpc.Client;
+using XmlRpc.Client.Attributes;
+using XmlRpc.Client.Exceptions;
+using XmlRpc.Client.Model;
 
 namespace XmlRpc.Server
 {

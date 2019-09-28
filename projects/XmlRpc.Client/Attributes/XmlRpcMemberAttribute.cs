@@ -1,6 +1,6 @@
 using System;
 
-namespace XmlRpc.Core
+namespace XmlRpc.Client.Attributes
 {
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
     public class XmlRpcMemberAttribute : Attribute

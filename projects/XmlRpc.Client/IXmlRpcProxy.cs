@@ -3,7 +3,8 @@ using System.ComponentModel;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using XmlRpc.Core;
+using XmlRpc.Client.Model;
+
 
 namespace XmlRpc.Client
 {

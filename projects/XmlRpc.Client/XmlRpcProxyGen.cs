@@ -2,7 +2,8 @@ using System;
 using System.Collections;
 using System.Reflection;
 using System.Reflection.Emit;
-using XmlRpc.Core;
+using XmlRpc.Client.Attributes;
+
 
 namespace XmlRpc.Client
 {

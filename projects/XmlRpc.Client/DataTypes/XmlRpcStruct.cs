@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections;
+using XmlRpc.Client.Model;
 
-namespace XmlRpc.Core
+namespace XmlRpc.Client.DataTypes
 {
   public class XmlRpcStruct : Hashtable
   {

@@ -5,8 +5,6 @@ VisualStudioVersion = 16.0.29306.81
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{014D7AB6-8883-42B2-8262-7C9860CE4A8E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XmlRpc.Core", "projects\XmlRpc.Core\XmlRpc.Core.csproj", "{585C57CE-615C-4DE4-8CEC-1709E4F1931E}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo.Contracts", "examples\Demo.Contracts\Demo.Contracts.csproj", "{EDEE0D01-96A2-4D62-94A4-6F1622B467E7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo.Client", "examples\Demo.Client\Demo.Client.csproj", "{51D03B22-524A-4C9F-AC8B-8887C25F8358}"
@@ -27,10 +25,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{585C57CE-615C-4DE4-8CEC-1709E4F1931E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{585C57CE-615C-4DE4-8CEC-1709E4F1931E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{585C57CE-615C-4DE4-8CEC-1709E4F1931E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{585C57CE-615C-4DE4-8CEC-1709E4F1931E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{EDEE0D01-96A2-4D62-94A4-6F1622B467E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{EDEE0D01-96A2-4D62-94A4-6F1622B467E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EDEE0D01-96A2-4D62-94A4-6F1622B467E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
