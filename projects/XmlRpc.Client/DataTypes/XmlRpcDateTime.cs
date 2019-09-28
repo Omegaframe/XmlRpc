@@ -4,7 +4,7 @@ namespace XmlRpc.Client.DataTypes
 {
     public class XmlRpcDateTime
     {
-        private DateTime _value;
+        DateTime _value;
 
         public XmlRpcDateTime()
         {

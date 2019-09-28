@@ -34,8 +34,8 @@ namespace XmlRpc.Client.Attributes
 
         public string Description = "";
         public bool Hidden = false;
-        private string method = "";
-        private bool introspectionMethod = false;
+        string method = "";
+        bool introspectionMethod = false;
     }
 }
 

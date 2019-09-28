@@ -11,8 +11,8 @@ namespace XmlRpc.Client.Exceptions
           : base("Server returned a fault exception: [" + TheCode.ToString() +
                   "] " + TheString)
         {
-            m_faultCode = TheCode;
-            m_faultString = TheString;
+            FaultCode = TheCode;
+            FaultString = TheString;
         }
 
         protected XmlRpcFaultException(
@@ -20,19 +20,13 @@ namespace XmlRpc.Client.Exceptions
           StreamingContext context)
           : base(info, context)
         {
-            m_faultCode = (int)info.GetValue("m_faultCode", typeof(int));
-            m_faultString = (String)info.GetValue("m_faultString", typeof(string));
+            FaultCode = (int)info.GetValue("m_faultCode", typeof(int));
+            FaultString = (String)info.GetValue("m_faultString", typeof(string));
         }
 
-        public int FaultCode
-        {
-            get { return m_faultCode; }
-        }
+        public int FaultCode { get; }
 
-        public string FaultString
-        {
-            get { return m_faultString; }
-        }
+        public string FaultString { get; }
 
         // public methods
         //
@@ -40,14 +34,9 @@ namespace XmlRpc.Client.Exceptions
           SerializationInfo info,
           StreamingContext context)
         {
-            info.AddValue("m_faultCode", m_faultCode);
-            info.AddValue("m_faultString", m_faultString);
+            info.AddValue("m_faultCode", FaultCode);
+            info.AddValue("m_faultString", FaultString);
             base.GetObjectData(info, context);
         }
-
-        // data
-        //
-        int m_faultCode;
-        string m_faultString;
     }
 }

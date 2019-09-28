@@ -3,7 +3,7 @@ namespace XmlRpc.Client.DataTypes
 {
     public class XmlRpcInt
     {
-        private int _value;
+        int _value;
 
         public XmlRpcInt()
         {

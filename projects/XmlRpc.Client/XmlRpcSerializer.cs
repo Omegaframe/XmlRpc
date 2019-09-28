@@ -69,7 +69,7 @@ namespace XmlRpc.Client
         }
         Encoding m_encoding = null;
 
-        // private properties
+        // properties
         bool AllowInvalidHTTPContent
         {
             get { return (m_nonStandard & XmlRpcNonStandard.AllowInvalidHTTPContent) != 0; }
@@ -811,10 +811,8 @@ namespace XmlRpc.Client
           ParseStack parseStack,
           MappingAction mappingAction)
         {
-            Type parsedType;
-            Type parsedArrayType;
             return ParseValue(node, ValueType, parseStack, mappingAction,
-              out parsedType, out parsedArrayType);
+              out _, out _);
         }
 
         public
@@ -835,7 +833,7 @@ namespace XmlRpc.Client
             if (valType != null && valType.BaseType == null)
                 valType = null;
 
-            object retObj = null;
+            object retObj;
             if (node == null)
             {
                 retObj = "";
@@ -868,46 +866,43 @@ namespace XmlRpc.Client
                     }
                     else
                     {
-                        if (valType == null || valType == typeof(object))
-                            valType = typeof(XmlRpcStruct);
-                        // TODO: do we need to validate type here?
-                        retObj = ParseHashtable(node, valType, parseStack, mappingAction);
+                        retObj = ParseHashtable(node, parseStack, mappingAction);
                     }
                 }
                 else if (node.Name == "i4"  // integer has two representations in XML-RPC spec
                   || node.Name == "int")
                 {
-                    retObj = ParseInt(node, valType, parseStack, mappingAction);
+                    retObj = ParseInt(node, valType, parseStack);
                     ParsedType = typeof(int);
                     ParsedArrayType = typeof(int[]);
                 }
                 else if (node.Name == "i8")
                 {
-                    retObj = ParseLong(node, valType, parseStack, mappingAction);
+                    retObj = ParseLong(node, valType, parseStack);
                     ParsedType = typeof(long);
                     ParsedArrayType = typeof(long[]);
                 }
                 else if (node.Name == "string")
                 {
-                    retObj = ParseString(node, valType, parseStack, mappingAction);
+                    retObj = ParseString(node, valType, parseStack);
                     ParsedType = typeof(string);
                     ParsedArrayType = typeof(string[]);
                 }
                 else if (node.Name == "boolean")
                 {
-                    retObj = ParseBoolean(node, valType, parseStack, mappingAction);
+                    retObj = ParseBoolean(node, valType, parseStack);
                     ParsedType = typeof(bool);
                     ParsedArrayType = typeof(bool[]);
                 }
                 else if (node.Name == "double")
                 {
-                    retObj = ParseDouble(node, valType, parseStack, mappingAction);
+                    retObj = ParseDouble(node, valType, parseStack);
                     ParsedType = typeof(double);
                     ParsedArrayType = typeof(double[]);
                 }
                 else if (node.Name == "dateTime.iso8601")
                 {
-                    retObj = ParseDateTime(node, valType, parseStack, mappingAction);
+                    retObj = ParseDateTime(node, valType, parseStack);
                     ParsedType = typeof(DateTime);
                     ParsedArrayType = typeof(DateTime[]);
                 }
@@ -954,7 +949,7 @@ namespace XmlRpc.Client
             int nodeCount = childNodes.Length;
             object[] elements = new object[nodeCount];
             // determine type of array elements
-            Type elemType = null;
+            Type elemType;
             if (ValueType != null
               && ValueType != typeof(Array)
               && ValueType != typeof(object))
@@ -973,10 +968,8 @@ namespace XmlRpc.Client
             {
                 parseStack.Push(String.Format("element {0}", i));
                 XmlNode vvNode = SelectValueNode(vNode);
-                Type parsedType;
-                Type parsedArrayType;
                 elements[i++] = ParseValue(vvNode, elemType, parseStack, mappingAction,
-                                            out parsedType, out parsedArrayType);
+                                            out Type parsedType, out Type parsedArrayType);
                 if (bGotType == false)
                 {
                     useType = parsedArrayType;
@@ -990,7 +983,7 @@ namespace XmlRpc.Client
                 parseStack.Pop();
             }
             object[] args = new object[1]; args[0] = nodeCount;
-            object retObj = null;
+            object retObj;
             if (ValueType != null
               && ValueType != typeof(Array)
               && ValueType != typeof(object))
@@ -1160,12 +1153,8 @@ namespace XmlRpc.Client
             {
                 if (member.Name != "member")
                     continue;
-                XmlNode nameNode;
-                bool dupName;
-                XmlNode valueNode;
-                bool dupValue;
-                SelectTwoNodes(member, "name", out nameNode, out dupName, "value",
-                  out valueNode, out dupValue);
+                SelectTwoNodes(member, "name", out XmlNode nameNode, out bool dupName, "value",
+                  out XmlNode valueNode, out bool dupValue);
                 if (nameNode == null || nameNode.FirstChild == null)
                     throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
                       + " contains a member with missing name"
@@ -1355,8 +1344,8 @@ namespace XmlRpc.Client
             // mapping action else just return the current action
             if (type == null)
                 return currentAction;
-            Attribute attr = null;
             FieldInfo fi = type.GetField(memberName);
+            Attribute attr;
             if (fi != null)
                 attr = Attribute.GetCustomAttribute(fi,
                   typeof(XmlRpcMissingMappingAttribute));
@@ -1373,9 +1362,8 @@ namespace XmlRpc.Client
 
         object ParseHashtable(
           XmlNode node,
-          Type valueType,
-          ParseStack parseStack,
-          MappingAction mappingAction)
+            ParseStack parseStack,
+            MappingAction mappingAction)
         {
             XmlRpcStruct retObj = new XmlRpcStruct();
             parseStack.Push("class mapped to XmlRpcStruct");
@@ -1386,12 +1374,8 @@ namespace XmlRpc.Client
                 {
                     if (member.Name != "member")
                         continue;
-                    XmlNode nameNode;
-                    bool dupName;
-                    XmlNode valueNode;
-                    bool dupValue;
-                    SelectTwoNodes(member, "name", out nameNode, out dupName, "value",
-                      out valueNode, out dupValue);
+                    SelectTwoNodes(member, "name", out XmlNode nameNode, out bool dupName, "value",
+                      out XmlNode valueNode, out bool dupValue);
                     if (nameNode == null || nameNode.FirstChild == null)
                         throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
                           + " contains a member with missing name"
@@ -1443,9 +1427,8 @@ namespace XmlRpc.Client
 
         object ParseInt(
           XmlNode node,
-          Type ValueType,
-          ParseStack parseStack,
-          MappingAction mappingAction)
+            Type ValueType,
+            ParseStack parseStack)
         {
             if (ValueType != null && ValueType != typeof(object)
               && ValueType != typeof(System.Int32)
@@ -1490,9 +1473,8 @@ namespace XmlRpc.Client
 
         object ParseLong(
           XmlNode node,
-          Type ValueType,
-          ParseStack parseStack,
-          MappingAction mappingAction)
+            Type ValueType,
+            ParseStack parseStack)
         {
             if (ValueType != null && ValueType != typeof(object)
               && ValueType != typeof(System.Int64)
@@ -1535,9 +1517,8 @@ namespace XmlRpc.Client
 
         object ParseString(
           XmlNode node,
-          Type ValueType,
-          ParseStack parseStack,
-          MappingAction mappingAction)
+            Type ValueType,
+            ParseStack parseStack)
         {
             if (ValueType != null && ValueType != typeof(System.String)
               && ValueType != typeof(object))
@@ -1565,9 +1546,8 @@ namespace XmlRpc.Client
 
         object ParseBoolean(
           XmlNode node,
-          Type ValueType,
-          ParseStack parseStack,
-          MappingAction mappingAction)
+            Type ValueType,
+            ParseStack parseStack)
         {
             if (ValueType != null && ValueType != typeof(object)
               && ValueType != typeof(System.Boolean)
@@ -1611,9 +1591,8 @@ namespace XmlRpc.Client
 
         object ParseDouble(
           XmlNode node,
-          Type ValueType,
-          ParseStack parseStack,
-          MappingAction mappingAction)
+            Type ValueType,
+            ParseStack parseStack)
         {
             if (ValueType != null && ValueType != typeof(object)
               && ValueType != typeof(System.Double)
@@ -1649,9 +1628,8 @@ namespace XmlRpc.Client
 
         object ParseDateTime(
           XmlNode node,
-          Type ValueType,
-          ParseStack parseStack,
-          MappingAction mappingAction)
+            Type ValueType,
+            ParseStack parseStack)
         {
             if (ValueType != null && ValueType != typeof(object)
               && ValueType != typeof(System.DateTime)
@@ -1805,9 +1783,11 @@ namespace XmlRpc.Client
           Stream stm,
           XmlRpcFaultException faultEx)
         {
-            var fs = new FaultStruct();
-            fs.faultCode = faultEx.FaultCode;
-            fs.faultString = faultEx.FaultString;
+            var fs = new FaultStruct
+            {
+                faultCode = faultEx.FaultCode,
+                faultString = faultEx.FaultString
+            };
 
             XmlTextWriter xtw = new XmlTextWriter(stm, m_encoding);
             ConfigureXmlFormat(xtw);

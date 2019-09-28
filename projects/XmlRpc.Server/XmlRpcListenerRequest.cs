@@ -20,6 +20,6 @@ namespace XmlRpc.Server
             get { return _request.HttpMethod; }
         }
 
-        private HttpListenerRequest _request;
+        HttpListenerRequest _request;
     }
 }

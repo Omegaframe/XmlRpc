@@ -9,7 +9,7 @@ namespace XmlRpc.Client
 {
     public class XmlRpcProxyGen
     {
-        static Hashtable _types = new Hashtable();
+        static readonly Hashtable _types = new Hashtable();
 
         public static T Create<T>()
         {
@@ -30,7 +30,7 @@ namespace XmlRpc.Client
                     string moduleName = "XmlRpcProxy" + guid.ToString() + ".dll";
                     string typeName = "XmlRpcProxy" + guid.ToString();
                     AssemblyBuilder assBldr = BuildAssembly(itf, assemblyName,
-                      moduleName, typeName, AssemblyBuilderAccess.Run);
+                      typeName, AssemblyBuilderAccess.Run);
                     proxyType = assBldr.GetType(typeName);
                     _types.Add(itf, proxyType);
                 }
@@ -47,10 +47,10 @@ namespace XmlRpc.Client
         {
             // create persistable assembly
             if (assemblyName.IndexOf(".dll") == (assemblyName.Length - 4))
-                assemblyName = assemblyName.Substring(0, assemblyName.Length - 4);
+                assemblyName = assemblyName[0..^4];
             string moduleName = assemblyName + ".dll";
             AssemblyBuilder assBldr = BuildAssembly(itf, assemblyName,
-              moduleName, typeName, AssemblyBuilderAccess.Run);
+              typeName, AssemblyBuilderAccess.Run);
             Type proxyType = assBldr.GetType(typeName);
             object ret = Activator.CreateInstance(proxyType);
             //assBldr.Save(moduleName);
@@ -60,7 +60,6 @@ namespace XmlRpc.Client
         static AssemblyBuilder BuildAssembly(
           Type itf,
           string assemblyName,
-          string moduleName,
           string typeName,
           AssemblyBuilderAccess access)
         {
@@ -365,7 +364,7 @@ namespace XmlRpc.Client
             }
         }
 
-        private static void BuildConstructor(
+        static void BuildConstructor(
           TypeBuilder typeBldr,
           Type baseType,
           string urlStr)
@@ -392,7 +391,7 @@ namespace XmlRpc.Client
             ilgen.Emit(OpCodes.Ret);
         }
 
-        private static string GetXmlRpcUrl(Type itf)
+        static string GetXmlRpcUrl(Type itf)
         {
             Attribute attr = Attribute.GetCustomAttribute(itf,
               typeof(XmlRpcUrlAttribute));
@@ -407,7 +406,7 @@ namespace XmlRpc.Client
         /// Type.GetMethods() does not return methods that a derived interface
         /// inherits from its base interfaces; this method does.
         /// </summary>
-        private static MethodInfo[] GetMethods(Type type)
+        static MethodInfo[] GetMethods(Type type)
         {
             MethodInfo[] methods = type.GetMethods();
             if (!type.IsInterface)
@@ -429,7 +428,7 @@ namespace XmlRpc.Client
             return (MethodInfo[])result.ToArray(typeof(MethodInfo));
         }
 
-        private static ArrayList GetXmlRpcMethods(Type itf)
+        static ArrayList GetXmlRpcMethods(Type itf)
         {
             ArrayList ret = new ArrayList();
             if (!itf.IsInterface)
@@ -441,13 +440,13 @@ namespace XmlRpc.Client
                     continue;
                 ParameterInfo[] pis = mi.GetParameters();
                 bool paramsMethod = pis.Length > 0 && Attribute.IsDefined(
-                  pis[pis.Length - 1], typeof(ParamArrayAttribute));
+                  pis[^1], typeof(ParamArrayAttribute));
                 ret.Add(new MethodData(mi, xmlRpcName, paramsMethod));
             }
             return ret;
         }
 
-        private static string GetXmlRpcMethodName(MethodInfo mi)
+        static string GetXmlRpcMethodName(MethodInfo mi)
         {
             Attribute attr = Attribute.GetCustomAttribute(mi,
               typeof(XmlRpcMethodAttribute));
@@ -485,7 +484,7 @@ namespace XmlRpc.Client
             public bool paramsMethod;
         }
 
-        private static ArrayList GetXmlRpcBeginMethods(Type itf)
+        static ArrayList GetXmlRpcBeginMethods(Type itf)
         {
             ArrayList ret = new ArrayList();
             if (!itf.IsInterface)
@@ -532,7 +531,7 @@ namespace XmlRpc.Client
             return ret;
         }
 
-        private static ArrayList GetXmlRpcEndMethods(Type itf)
+        static ArrayList GetXmlRpcEndMethods(Type itf)
         {
             ArrayList ret = new ArrayList();
             if (!itf.IsInterface)

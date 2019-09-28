@@ -34,7 +34,7 @@ namespace XmlRpc.Client.Attributes
             return value;
         }
 
-        private string _member = "";
-        private string _description = "";
+        string _member = "";
+        string _description = "";
     }
 }

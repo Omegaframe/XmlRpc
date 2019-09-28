@@ -123,7 +123,7 @@ namespace XmlRpc.Server
             wrtr.WriteEndElement();
         }
 
-        private static void WriteMethod(
+        static void WriteMethod(
       XmlWriter wrtr,
       XmlRpcMethodInfo mthdInfo,
       ArrayList structs)
@@ -221,7 +221,7 @@ namespace XmlRpc.Server
             wrtr.WriteEndElement();
         }
 
-        private static void WriteStruct(
+        static void WriteStruct(
       XmlWriter wrtr,
       Type structType,
       ArrayList structs)
@@ -300,7 +300,7 @@ namespace XmlRpc.Server
             wrtr.WriteEndElement();
         }
 
-        private static void WriteStyle(XmlWriter wrtr)
+        static void WriteStyle(XmlWriter wrtr)
         {
             wrtr.WriteStartElement("style");
             wrtr.WriteAttributeString("type", "text/css");
@@ -327,7 +327,7 @@ namespace XmlRpc.Server
             wrtr.WriteEndElement();
         }
 
-        private static void WriteTitle(
+        static void WriteTitle(
           XmlWriter wrtr,
           string title)
         {
@@ -336,7 +336,7 @@ namespace XmlRpc.Server
             wrtr.WriteEndElement();
         }
 
-        private static void WriteType(
+        static void WriteType(
           XmlWriter wrtr,
           Type type,
           bool isparams,

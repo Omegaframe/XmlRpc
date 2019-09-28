@@ -40,8 +40,8 @@ namespace XmlRpc.Client.Attributes
 
         public string Description = "";
         public bool Hidden = false;
-        private string method = "";
-        private bool introspectionMethod = false;
-        private bool structParams = false;
+        string method = "";
+        bool introspectionMethod = false;
+        bool structParams = false;
     }
 }

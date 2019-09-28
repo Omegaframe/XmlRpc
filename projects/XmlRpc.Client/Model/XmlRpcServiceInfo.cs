@@ -219,7 +219,7 @@ namespace XmlRpc.Client.Model
             return null;
         }
 
-        private XmlRpcServiceInfo()
+        XmlRpcServiceInfo()
         {
         }
 
@@ -228,7 +228,7 @@ namespace XmlRpc.Client.Model
             return GetXmlRpcType(t, new Stack());
         }
 
-        private static XmlRpcType GetXmlRpcType(Type t, Stack typeStack)
+        static XmlRpcType GetXmlRpcType(Type t, Stack typeStack)
         {
             XmlRpcType ret;
             if (t == typeof(Int32))

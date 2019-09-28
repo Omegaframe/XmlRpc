@@ -47,15 +47,19 @@ namespace XmlRpc.Server
                   "Information not available on this method");
             }
             //XmlRpcTypes.CheckIsXmlRpcMethod(mi);
-            ArrayList alist = new ArrayList();
-            alist.Add(XmlRpcServiceInfo.GetXmlRpcTypeString(mthdInfo.ReturnType));
+            var alist = new ArrayList
+            {
+                XmlRpcServiceInfo.GetXmlRpcTypeString(mthdInfo.ReturnType)
+            };
             foreach (XmlRpcParameterInfo paramInfo in mthdInfo.Parameters)
             {
                 alist.Add(XmlRpcServiceInfo.GetXmlRpcTypeString(paramInfo.Type));
             }
             string[] types = (string[])alist.ToArray(typeof(string));
-            ArrayList retalist = new ArrayList();
-            retalist.Add(types);
+            var retalist = new ArrayList
+            {
+                types
+            };
             Array retarray = retalist.ToArray(typeof(string[]));
             return retarray;
         }

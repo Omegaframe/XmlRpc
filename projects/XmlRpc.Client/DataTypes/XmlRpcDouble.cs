@@ -3,7 +3,7 @@ namespace XmlRpc.Client.DataTypes
 {
     public class XmlRpcDouble
     {
-        private double _value;
+        double _value;
 
         public XmlRpcDouble()
         {

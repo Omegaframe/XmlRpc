@@ -40,9 +40,9 @@ namespace XmlRpc.Client.Attributes
 
         public string Description = "";
         public bool Hidden = false;
-        private string method = "";
-        private bool introspectionMethod = false;
-        private Type returnType = null;
+        string method = "";
+        bool introspectionMethod = false;
+        Type returnType = null;
     }
 }
 

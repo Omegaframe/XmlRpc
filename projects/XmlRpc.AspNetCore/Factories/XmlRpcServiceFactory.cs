@@ -5,7 +5,7 @@ namespace XmlRpc.AspNetCore.Factories
 {
     internal class XmlRpcServiceFactory : IXmlRpcServiceFactory
     {
-        private readonly IServiceProvider _serviceProvider;
+        readonly IServiceProvider _serviceProvider;
 
         public XmlRpcServiceFactory(IServiceProvider serviceProvider)
         {

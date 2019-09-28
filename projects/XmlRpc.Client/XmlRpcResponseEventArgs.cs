@@ -5,9 +5,9 @@ namespace XmlRpc.Client
 {
     public class XmlRpcResponseEventArgs : EventArgs
     {
-        private Guid _guid;
-        private long _request;
-        private Stream _responseStream;
+        Guid _guid;
+        long _request;
+        Stream _responseStream;
 
         public XmlRpcResponseEventArgs(Guid guid, long request,
           Stream responseStream)

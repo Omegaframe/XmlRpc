@@ -6,7 +6,7 @@ namespace XmlRpc.Client.DataTypes
 {
     public static class DateTime8601
     {
-        private static Regex _dateTime8601Regex = new Regex(
+        static Regex _dateTime8601Regex = new Regex(
             @"(((?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2}))|((?<year>\d{4})(?<month>\d{2})(?<day>\d{2})))"
           + @"T"
           + @"(((?<hour>\d{2}):(?<minute>\d{2}):(?<second>\d{2}))|((?<hour>\d{2})(?<minute>\d{2})(?<second>\d{2})))"

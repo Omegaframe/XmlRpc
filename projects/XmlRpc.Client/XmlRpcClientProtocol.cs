@@ -13,37 +13,37 @@ namespace XmlRpc.Client
 {
     public class XmlRpcClientProtocol : Component, IXmlRpcProxy
     {
-        private bool _allowAutoRedirect = true;
+        bool _allowAutoRedirect = true;
 
-        private string _connectionGroupName = null;
+        string _connectionGroupName = null;
 
-        private bool _expect100Continue = false;
-        private bool _enableCompression = false;
+        bool _expect100Continue = false;
+        bool _enableCompression = false;
 
-        private ICredentials _credentials = null;
-        private WebHeaderCollection _headers = new WebHeaderCollection();
-        private int _indentation = 2;
-        private bool _keepAlive = true;
-        private XmlRpcNonStandard _nonStandard = XmlRpcNonStandard.None;
-        private bool _preAuthenticate = false;
-        private Version _protocolVersion = HttpVersion.Version11;
-        private IWebProxy _proxy = null;
-        private CookieCollection _responseCookies;
-        private WebHeaderCollection _responseHeaders;
-        private int _timeout = 100000;
-        private string _url = null;
-        private string _userAgent = "XML-RPC.NET";
-        private bool _useEmptyParamsTag = true;
-        private bool _useIndentation = true;
-        private bool _useIntTag = false;
-        private bool _useStringTag = true;
-        private Encoding _xmlEncoding = null;
-        private string _xmlRpcMethod = null;
+        ICredentials _credentials = null;
+        WebHeaderCollection _headers = new WebHeaderCollection();
+        int _indentation = 2;
+        bool _keepAlive = true;
+        XmlRpcNonStandard _nonStandard = XmlRpcNonStandard.None;
+        bool _preAuthenticate = false;
+        Version _protocolVersion = HttpVersion.Version11;
+        IWebProxy _proxy = null;
+        CookieCollection _responseCookies;
+        WebHeaderCollection _responseHeaders;
+        int _timeout = 100000;
+        string _url = null;
+        string _userAgent = "XML-RPC.NET";
+        bool _useEmptyParamsTag = true;
+        bool _useIndentation = true;
+        bool _useIntTag = false;
+        bool _useStringTag = true;
+        Encoding _xmlEncoding = null;
+        string _xmlRpcMethod = null;
 
-        private X509CertificateCollection _clientCertificates
+        X509CertificateCollection _clientCertificates
           = new X509CertificateCollection();
-        private CookieContainer _cookies = new CookieContainer();
-        private Guid _id = Guid.NewGuid();
+        CookieContainer _cookies = new CookieContainer();
+        Guid _id = Guid.NewGuid();
 
 
         public XmlRpcClientProtocol(System.ComponentModel.IContainer container)
@@ -377,7 +377,7 @@ namespace XmlRpc.Client
                 webReq.Headers.Add(HttpRequestHeader.AcceptEncoding, "gzip,deflate");
         }
 
-        private void SetRequestHeaders(
+        void SetRequestHeaders(
           WebHeaderCollection headers,
           WebRequest webReq)
         {
@@ -387,7 +387,7 @@ namespace XmlRpc.Client
             }
         }
 
-        private void SetClientCertificates(
+        void SetClientCertificates(
           X509CertificateCollection certificates,
           WebRequest webReq)
         {
@@ -892,7 +892,7 @@ namespace XmlRpc.Client
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent()
+        void InitializeComponent()
         {
         }
 

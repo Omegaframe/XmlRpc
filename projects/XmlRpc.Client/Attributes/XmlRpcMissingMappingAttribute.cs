@@ -33,6 +33,6 @@ namespace XmlRpc.Client.Attributes
             return value;
         }
 
-        private MappingAction _action = MappingAction.Error;
+        MappingAction _action = MappingAction.Error;
     }
 }

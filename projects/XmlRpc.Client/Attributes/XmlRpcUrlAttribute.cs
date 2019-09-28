@@ -19,6 +19,6 @@ namespace XmlRpc.Client.Attributes
             string value = "Uri : " + uri;
             return value;
         }
-        private string uri;
+        string uri;
     }
 }

@@ -45,6 +45,6 @@ namespace XmlRpc.Server
             set { response.StatusDescription = value; }
         }
 
-        private HttpListenerResponse response;
+        HttpListenerResponse response;
     }
 }

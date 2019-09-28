@@ -75,15 +75,15 @@ namespace XmlRpc.Client.Attributes
       return value;
     }
  
-    private string description = "";
-    private string xmlEncoding = null;
-    private int indentation = 2;
-    private bool introspection = false;
-    private bool autoDocumentation = true;
-    private bool autoDocVersion = true;
-    private string name = "";
-    private bool useStringTag = true;
-    private bool useIndentation = true;
-    private bool useIntTag = false;
+    string description = "";
+    string xmlEncoding = null;
+    int indentation = 2;
+    bool introspection = false;
+    bool autoDocumentation = true;
+    bool autoDocVersion = true;
+    string name = "";
+    bool useStringTag = true;
+    bool useIndentation = true;
+    bool useIntTag = false;
   }
 }

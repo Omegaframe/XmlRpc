@@ -15,6 +15,6 @@ namespace XmlRpc.Client.Attributes
             string value = "Description : " + description;
             return value;
         }
-        private string description = "";
+        string description = "";
     }
 }

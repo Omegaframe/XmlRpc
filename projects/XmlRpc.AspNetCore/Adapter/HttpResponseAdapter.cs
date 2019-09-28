@@ -8,7 +8,7 @@ namespace XmlRpc.AspNetCore.Adapter
 {
     internal class HttpResponseAdapter : IHttpResponse
     {
-        private readonly HttpResponse _adaptee;
+        readonly HttpResponse _adaptee;
 
         public HttpResponseAdapter(HttpResponse adaptee) 
         {

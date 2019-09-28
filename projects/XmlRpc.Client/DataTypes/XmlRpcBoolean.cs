@@ -3,7 +3,7 @@ namespace XmlRpc.Client.DataTypes
 {
     public class XmlRpcBoolean
     {
-        private bool _value;
+        bool _value;
 
         public XmlRpcBoolean()
         {

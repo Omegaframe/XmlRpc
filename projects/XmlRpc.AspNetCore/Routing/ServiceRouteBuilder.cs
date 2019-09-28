@@ -9,8 +9,8 @@ namespace XmlRpc.AspNetCore.Routing
 {
     internal class ServiceRouteBuilder : IServiceRouteBuilder
     {
-        private readonly IRouteBuilder _routes;
-        private readonly IXmlRpcServiceFactory _serviceFactory;
+        readonly IRouteBuilder _routes;
+        readonly IXmlRpcServiceFactory _serviceFactory;
 
         public ServiceRouteBuilder(IRouteBuilder routes, IXmlRpcServiceFactory serviceFactory) 
         {
@@ -25,7 +25,7 @@ namespace XmlRpc.AspNetCore.Routing
             return this;
         }
 
-        private Task DelegateRpcServiceRequest<TService>(HttpContext context) where TService : XmlRpcService
+        Task DelegateRpcServiceRequest<TService>(HttpContext context) where TService : XmlRpcService
         {
             var service = _serviceFactory.CreateService<TService>();
             return service.HandleHttpRequestAsync(context);
