@@ -263,7 +263,7 @@ namespace XmlRpc.Client.Model
             {
 
                 Type elemType = t.GetElementType();
-                if (elemType != typeof(Object)
+                if (elemType != typeof(object)
                   && GetXmlRpcType(elemType, typeStack) == XmlRpcType.tInvalid)
                 {
                     ret = XmlRpcType.tInvalid;
@@ -294,7 +294,7 @@ namespace XmlRpc.Client.Model
             else if ((t.IsValueType && !t.IsPrimitive && !t.IsEnum)
               || t.IsClass)
             {
-                // if type is struct or class its only valid for XML-RPC mapping if all 
+                // if type is class or class its only valid for XML-RPC mapping if all 
                 // its members have a valid mapping or are of type object which
                 // maps to any XML-RPC type
                 MemberInfo[] mis = t.GetMembers();
@@ -308,7 +308,7 @@ namespace XmlRpc.Client.Model
                         try
                         {
                             typeStack.Push(fi.FieldType);
-                            if ((fi.FieldType != typeof(Object)
+                            if ((fi.FieldType != typeof(object)
                               && GetXmlRpcType(fi.FieldType, typeStack) == XmlRpcType.tInvalid))
                             {
                                 return XmlRpcType.tInvalid;
@@ -327,7 +327,7 @@ namespace XmlRpc.Client.Model
                         try
                         {
                             typeStack.Push(pi.PropertyType);
-                            if ((pi.PropertyType != typeof(Object)
+                            if ((pi.PropertyType != typeof(object)
                               && GetXmlRpcType(pi.PropertyType, typeStack) == XmlRpcType.tInvalid))
                             {
                                 return XmlRpcType.tInvalid;

@@ -232,7 +232,7 @@ namespace XmlRpc.Server
             wrtr.WriteStartElement("a");
             wrtr.WriteAttributeString("name", "#" + structType.Name);
 
-            wrtr.WriteString("struct " + structType.Name);
+            wrtr.WriteString("class " + structType.Name);
             wrtr.WriteEndElement();
             wrtr.WriteEndElement();
 
@@ -342,11 +342,11 @@ namespace XmlRpc.Server
           bool isparams,
           ArrayList structs)
         {
-            // TODO: following is hack for case when type is Object
+            // TODO: following is hack for case when type is object
             string xmlRpcType;
             if (!isparams)
             {
-                if (type != typeof(Object))
+                if (type != typeof(object))
                     xmlRpcType = XmlRpcServiceInfo.GetXmlRpcTypeString(type);
                 else
                     xmlRpcType = "any";
@@ -371,7 +371,7 @@ namespace XmlRpc.Server
                     wrtr.WriteString(" of ");
                     Type elemType = type.GetElementType();
                     string elemXmlRpcType;
-                    if (elemType != typeof(Object))
+                    if (elemType != typeof(object))
                         elemXmlRpcType = XmlRpcServiceInfo.GetXmlRpcTypeString(elemType);
                     else
                         elemXmlRpcType = "any";

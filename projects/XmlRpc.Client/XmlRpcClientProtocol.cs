@@ -79,7 +79,7 @@ namespace XmlRpc.Client
         }
 
         public object Invoke(
-          Object clientObj,
+          object clientObj,
           string methodName,
           params object[] parameters)
         {
@@ -88,7 +88,7 @@ namespace XmlRpc.Client
         }
 
         public object Invoke(
-          Object clientObj,
+          object clientObj,
           MethodInfo mi,
           params object[] parameters)
         {
@@ -827,7 +827,7 @@ namespace XmlRpc.Client
         [XmlRpcMethod("system.listMethods")]
         public string[] SystemListMethods()
         {
-            return (string[])Invoke("SystemListMethods", new Object[0]);
+            return (string[])Invoke("SystemListMethods", new object[0]);
         }
 
         [XmlRpcMethod("system.listMethods")]
@@ -848,7 +848,7 @@ namespace XmlRpc.Client
         public object[] SystemMethodSignature(string MethodName)
         {
             return (object[])Invoke("SystemMethodSignature",
-              new Object[] { MethodName });
+              new object[] { MethodName });
         }
 
         [XmlRpcMethod("system.methodSignature")]
@@ -858,7 +858,7 @@ namespace XmlRpc.Client
           object State)
         {
             return BeginInvoke("SystemMethodSignature",
-              new Object[] { MethodName }, this, Callback, State);
+              new object[] { MethodName }, this, Callback, State);
         }
 
         public Array EndSystemMethodSignature(IAsyncResult AsyncResult)
@@ -870,7 +870,7 @@ namespace XmlRpc.Client
         public string SystemMethodHelp(string MethodName)
         {
             return (string)Invoke("SystemMethodHelp",
-              new Object[] { MethodName });
+              new object[] { MethodName });
         }
 
         [XmlRpcMethod("system.methodHelp")]
@@ -880,7 +880,7 @@ namespace XmlRpc.Client
           object State)
         {
             return BeginInvoke("SystemMethodHelp",
-              new Object[] { MethodName }, this, Callback, State);
+              new object[] { MethodName }, this, Callback, State);
         }
 
         public string EndSystemMethodHelp(IAsyncResult AsyncResult)

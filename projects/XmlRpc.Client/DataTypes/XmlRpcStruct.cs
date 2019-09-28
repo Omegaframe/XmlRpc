@@ -50,7 +50,7 @@ namespace XmlRpc.Client.DataTypes
       }
     }
 
-    public override bool Equals(Object obj)
+    public override bool Equals(object obj)
     {
       if (obj.GetType() != typeof(XmlRpcStruct))
         return false;

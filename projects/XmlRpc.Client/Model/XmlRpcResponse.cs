@@ -12,6 +12,6 @@ namespace XmlRpc.Client.Model
         {
             retVal = retValue;
         }
-        public Object retVal;
+        public object retVal;
     }
 }

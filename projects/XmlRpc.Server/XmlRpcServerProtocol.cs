@@ -67,7 +67,7 @@ namespace XmlRpc.Server
             }
             // exceptions thrown during an MethodInfo.Invoke call are
             // package as inner of 
-            Object reto;
+            object reto;
             try
             {
                 reto = mi.Invoke(this, request.args);

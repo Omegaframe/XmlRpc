@@ -26,14 +26,14 @@ namespace XmlRpc.Client.Model
             proxyId = proxyGuid;
         }
 
-        public XmlRpcRequest(string methodName, Object[] parameters)
+        public XmlRpcRequest(string methodName, object[] parameters)
         {
             method = methodName;
             args = parameters;
         }
 
         public String method = null;
-        public Object[] args = null;
+        public object[] args = null;
         public MethodInfo mi = null;
         public Guid proxyId;
         static int _created;

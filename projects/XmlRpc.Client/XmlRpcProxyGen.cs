@@ -153,13 +153,13 @@ namespace XmlRpc.Client
             LocalBuilder tempRetVal = null;
             if (typeof(void) != returnType)
             {
-                tempRetVal = ilgen.DeclareLocal(typeof(System.Object));
+                tempRetVal = ilgen.DeclareLocal(typeof(object));
                 retVal = ilgen.DeclareLocal(returnType);
             }
             // declare variable to store method args and emit code to populate ut
-            LocalBuilder argValues = ilgen.DeclareLocal(typeof(System.Object[]));
+            LocalBuilder argValues = ilgen.DeclareLocal(typeof(object[]));
             ilgen.Emit(OpCodes.Ldc_I4, argTypes.Length);
-            ilgen.Emit(OpCodes.Newarr, typeof(System.Object));
+            ilgen.Emit(OpCodes.Newarr, typeof(object));
             ilgen.Emit(OpCodes.Stloc, argValues);
             for (int argLoad = 0; argLoad < argTypes.Length; argLoad++)
             {
@@ -241,9 +241,9 @@ namespace XmlRpc.Client
                 // start generating IL
                 ILGenerator ilgen = mthdBldr.GetILGenerator();
                 // declare variable to store method args and emit code to populate it
-                LocalBuilder argValues = ilgen.DeclareLocal(typeof(System.Object[]));
+                LocalBuilder argValues = ilgen.DeclareLocal(typeof(object[]));
                 ilgen.Emit(OpCodes.Ldc_I4, argCount);
-                ilgen.Emit(OpCodes.Newarr, typeof(System.Object));
+                ilgen.Emit(OpCodes.Newarr, typeof(object));
                 ilgen.Emit(OpCodes.Stloc, argValues);
                 for (int argLoad = 0; argLoad < argCount; argLoad++)
                 {
@@ -270,7 +270,7 @@ namespace XmlRpc.Client
                 }
                 // emit code to store async state parameter, defaulting to null 
                 // if not in method signature
-                LocalBuilder objValue = ilgen.DeclareLocal(typeof(System.Object));
+                LocalBuilder objValue = ilgen.DeclareLocal(typeof(object));
                 if (argCount < (paramCount - 1))
                 {
                     ilgen.Emit(OpCodes.Ldarg, argCount + 2);
@@ -281,9 +281,9 @@ namespace XmlRpc.Client
               {
         typeof(MethodInfo),
         typeof(object[]),
-        typeof(System.Object),
-        typeof(System.AsyncCallback),
-        typeof(System.Object)
+        typeof(object),
+        typeof(AsyncCallback),
+        typeof(object)
               };
                 MethodInfo invokeMethod
                   = typeof(XmlRpcClientProtocol).GetMethod("BeginInvoke", invokeTypes);
@@ -317,7 +317,7 @@ namespace XmlRpc.Client
                 // if non-void return, declared locals for processing return value
                 if (typeof(void) != mi.ReturnType)
                 {
-                    tempRetVal = ilgen.DeclareLocal(typeof(System.Object));
+                    tempRetVal = ilgen.DeclareLocal(typeof(object));
                     retVal = ilgen.DeclareLocal(mi.ReturnType);
                 }
                 // call EndInvoke on base class
@@ -521,8 +521,8 @@ namespace XmlRpc.Client
                     if (i == (paramCount - 2))
                     {
                         Type paramType = mi.GetParameters()[i + 1].ParameterType;
-                        if (paramType != typeof(System.Object))
-                            throw new Exception(String.Format(
+                        if (paramType != typeof(object))
+                            throw new Exception(string.Format(
                               "method {0} has invalid signature for begin method",
                               mi.Name));
                     }
