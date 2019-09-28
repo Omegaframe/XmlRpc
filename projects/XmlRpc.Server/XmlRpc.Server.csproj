@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Description>XmlRpcListenerService port of Charles Cook's XML-RPC library to .NET Standard / .NET Core. </Description>
+    <PackageId>XmlRpc.Server</PackageId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NuGet.Build.Packaging" Version="0.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\XmlRpc.Core\XmlRpc.Core.csproj" />
+  </ItemGroup>
+</Project>
