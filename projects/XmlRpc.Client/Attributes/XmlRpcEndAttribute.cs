@@ -5,37 +5,23 @@ namespace XmlRpc.Client.Attributes
     [AttributeUsage(AttributeTargets.Method)]
     public class XmlRpcEndAttribute : Attribute
     {
-        public XmlRpcEndAttribute()
-        {
-        }
+        public string Method { get; } = string.Empty;
+        public bool IntrospectionMethod { get; set; } = false;
+
+        public string Description = string.Empty;
+        public bool Hidden = false;
+
+        public XmlRpcEndAttribute() { }
 
         public XmlRpcEndAttribute(string method)
         {
-            this.method = method;
-        }
-
-        public string Method
-        {
-            get
-            { return method; }
-        }
-
-        public bool IntrospectionMethod
-        {
-            get { return introspectionMethod; }
-            set { introspectionMethod = value; }
+            Method = method;
         }
 
         public override string ToString()
         {
-            string value = "Method : " + method;
-            return value;
+            return "Method : " + Method;
         }
-
-        public string Description = "";
-        public bool Hidden = false;
-        string method = "";
-        bool introspectionMethod = false;
     }
 }
 

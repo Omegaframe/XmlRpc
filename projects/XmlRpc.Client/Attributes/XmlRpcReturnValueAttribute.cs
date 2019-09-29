@@ -5,16 +5,11 @@ namespace XmlRpc.Client.Attributes
     [AttributeUsage(AttributeTargets.ReturnValue)]
     public class XmlRpcReturnValueAttribute : Attribute
     {
-        public string Description
-        {
-            get { return description; }
-            set { description = value; }
-        }
+        public string Description { get; set; } = string.Empty;
+
         public override string ToString()
         {
-            string value = "Description : " + description;
-            return value;
+            return "Description : " + Description;
         }
-        string description = "";
     }
 }

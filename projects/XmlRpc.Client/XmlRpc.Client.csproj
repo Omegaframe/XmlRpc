@@ -6,10 +6,4 @@
     <PackageId>XmlRpc.Client</PackageId>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="System.CodeDom" Version="4.5.0" />
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
-    <PackageReference Include="NuGet.Build.Packaging" Version="0.2.0" />
-  </ItemGroup>
-
 </Project>

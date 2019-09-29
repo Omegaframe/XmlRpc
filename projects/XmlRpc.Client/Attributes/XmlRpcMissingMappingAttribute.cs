@@ -1,38 +1,23 @@
 ﻿using System;
+using XmlRpc.Client.Model;
 
 namespace XmlRpc.Client.Attributes
 {
-    public enum MappingAction
-    {
-        Ignore,
-        Error
-    }
-
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Struct
-       | AttributeTargets.Property | AttributeTargets.Class)]
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Struct | AttributeTargets.Property | AttributeTargets.Class)]
     public class XmlRpcMissingMappingAttribute : Attribute
     {
-        public XmlRpcMissingMappingAttribute()
-        {
-        }
+        public MappingAction Action { get; } = MappingAction.Error;
+
+        public XmlRpcMissingMappingAttribute() { }
 
         public XmlRpcMissingMappingAttribute(MappingAction action)
         {
-            _action = action;
-        }
-
-        public MappingAction Action
-        {
-            get
-            { return _action; }
+            Action = action;
         }
 
         public override string ToString()
         {
-            string value = _action.ToString();
-            return value;
+            return Action.ToString();
         }
-
-        MappingAction _action = MappingAction.Error;
     }
 }

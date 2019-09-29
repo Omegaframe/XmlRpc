@@ -5,20 +5,16 @@ namespace XmlRpc.Client.Attributes
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
     public class XmlRpcUrlAttribute : Attribute
     {
+        public string Uri { get; }
+
         public XmlRpcUrlAttribute(string UriString)
         {
-            this.uri = UriString;
+            Uri = UriString;
         }
-        public string Uri
-        {
-            get
-            { return uri; }
-        }
+
         public override string ToString()
         {
-            string value = "Uri : " + uri;
-            return value;
+            return "Uri : " + Uri;
         }
-        string uri;
     }
 }

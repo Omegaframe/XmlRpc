@@ -5,44 +5,24 @@ namespace XmlRpc.Client.Attributes
     [AttributeUsage(AttributeTargets.Method)]
     public class XmlRpcBeginAttribute : Attribute
     {
-        public XmlRpcBeginAttribute()
-        {
-        }
+        public string Method { get; } = string.Empty;
+        public Type ReturnType { get; set; } = null;
+        public bool IntrospectionMethod { get; set; } = false;
+
+        public string Description = "";
+        public bool Hidden = false;
+
+        public XmlRpcBeginAttribute() { }
 
         public XmlRpcBeginAttribute(string method)
         {
-            this.method = method;
-        }
-
-        public string Method
-        {
-            get
-            { return method; }
-        }
-
-        public Type ReturnType
-        {
-            get { return returnType; }
-            set { returnType = value; }
-        }
-
-        public bool IntrospectionMethod
-        {
-            get { return introspectionMethod; }
-            set { introspectionMethod = value; }
+            Method = method;
         }
 
         public override string ToString()
         {
-            string value = "Method : " + method;
-            return value;
+            return "Method : " + Method;
         }
-
-        public string Description = "";
-        public bool Hidden = false;
-        string method = "";
-        bool introspectionMethod = false;
-        Type returnType = null;
     }
 }
 
