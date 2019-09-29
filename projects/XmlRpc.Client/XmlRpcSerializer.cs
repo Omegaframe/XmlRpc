@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Xml;
@@ -279,67 +280,33 @@ namespace XmlRpc.Client
                 throw new XmlRpcInvalidXmlRpcException(
                   "Request XML not valid XML-RPC - empty methodName.");
             }
+
             request.mi = null;
-            ParameterInfo[] pis = new ParameterInfo[0];
-            if (svcType != null)
-            {
-                // retrieve info for the method which handles this XML-RPC method
-                XmlRpcServiceInfo svcInfo
-                  = XmlRpcServiceInfo.CreateServiceInfo(svcType);
-                request.mi = svcInfo.GetMethodInfo(request.method);
-                // if a service type has been specified and we cannot find the requested
-                // method then we must throw an exception
-                if (request.mi == null)
-                {
-                    string msg = String.Format("unsupported method called: {0}",
-                                                request.method);
-                    throw new XmlRpcUnsupportedMethodException(msg);
-                }
-                // method must be marked with XmlRpcMethod attribute
-                Attribute attr = Attribute.GetCustomAttribute(request.mi,
-                  typeof(XmlRpcMethodAttribute));
-                if (attr == null)
-                {
-                    throw new XmlRpcMethodAttributeException(
-                      "Method must be marked with the XmlRpcMethod attribute.");
-                }
-                pis = request.mi.GetParameters();
-            }
+            var possibleMethods = new MethodInfo[0];
+            var pis = new ParameterInfo[0];
+
+            // retrieve info for the method which handles this XML-RPC method
+            var svcInfo = XmlRpcServiceInfo.CreateServiceInfo(svcType);
+            possibleMethods = svcInfo.GetMethodInfos(request.method);
+            // if a service type has been specified and we cannot find the requested
+            // method then we must throw an exception
+            if (!possibleMethods.Any())
+                throw new XmlRpcUnsupportedMethodException($"unsupported method called: {request.method}");
+
             XmlNode paramsNode = SelectSingleNode(callNode, "params");
-            if (paramsNode == null)
-            {
-                if (svcType != null)
-                {
-                    if (pis.Length == 0)
-                    {
-                        request.args = new object[0];
-                        return request;
-                    }
-                    else
-                    {
-                        throw new XmlRpcInvalidParametersException(
-                          "Method takes parameters and params element is missing.");
-                    }
-                }
-                else
-                {
-                    request.args = new object[0];
-                    return request;
-                }
-            }
             XmlNode[] paramNodes = SelectNodes(paramsNode, "param");
+            request.mi = possibleMethods.FirstOrDefault(m => m.GetParameters().Length == paramNodes.Length);
+            if (request.mi == null)
+                throw new XmlRpcInvalidParametersException($"The method {request.method} was called with wrong parameter count");
+
+            // method must be marked with XmlRpcMethod attribute
+            var attr = Attribute.GetCustomAttribute(request.mi, typeof(XmlRpcMethodAttribute));
+            if (attr == null)
+                throw new XmlRpcMethodAttributeException($"Method {request.method} must be marked with the XmlRpcMethod attribute.");
+
+            pis = request.mi.GetParameters();
             int paramsPos = GetParamsPos(pis);
-            int minParamCount = paramsPos == -1 ? pis.Length : paramsPos;
-            if (svcType != null && paramNodes.Length < minParamCount)
-            {
-                throw new XmlRpcInvalidParametersException(
-                  "Request contains too few param elements based on method signature.");
-            }
-            if (svcType != null && paramsPos == -1 && paramNodes.Length > pis.Length)
-            {
-                throw new XmlRpcInvalidParametersException(
-                  "Request contains too many param elements based on method signature.");
-            }
+
             ParseStack parseStack = new ParseStack("request");
             // TODO: use global action setting
             MappingAction mappingAction = MappingAction.Error;

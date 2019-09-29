@@ -111,13 +111,11 @@ namespace XmlRpc.Client.Model
             methods.Add(mthdInfo.XmlRpcName, mthdInfo);
         }
 
-        public MethodInfo GetMethodInfo(string xmlRpcMethodName)
+        public MethodInfo[] GetMethodInfos(string xmlRpcMethodName)
         {
-            foreach (XmlRpcMethodInfo xmi in Methods)
-                if (xmlRpcMethodName == xmi.XmlRpcName)
-                    return xmi.MethodInfo;
-
-            return null;
+            var methods = Methods.Where(m => m.XmlRpcName.Equals(xmlRpcMethodName, StringComparison.OrdinalIgnoreCase))
+                .Select(m => m.MethodInfo);
+            return methods.ToArray();
         }
 
         public static string GetXmlRpcMethodName(MethodInfo mi)
