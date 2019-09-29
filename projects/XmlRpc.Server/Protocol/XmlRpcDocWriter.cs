@@ -10,8 +10,7 @@ namespace XmlRpc.Server.Protocol
 {
     public class XmlRpcDocWriter
     {
-        public static void WriteBody(XmlWriter wrtr, Type type,
-          bool autoDocVersion)
+        public static void WriteBody(XmlWriter wrtr, Type type, bool autoDocVersion)
         {
             wrtr.WriteStartElement("body");
 
@@ -19,14 +18,10 @@ namespace XmlRpc.Server.Protocol
 
             WriteFooter(wrtr, autoDocVersion);
 
-            // Todo: Check required?
-            //wrtr.WriteEndElement("div");
-
             wrtr.WriteEndElement();
         }
 
-        public static void WriteDoc(XmlWriter wrtr, Type type,
-              bool autoDocVersion)
+        public static void WriteDoc(XmlWriter wrtr, Type type, bool autoDocVersion)
         {
             XmlRpcServiceInfo svcInfo = XmlRpcServiceInfo.CreateServiceInfo(type);
 
@@ -39,9 +34,8 @@ namespace XmlRpc.Server.Protocol
         public static void WriteFooter(XmlWriter wrtr, bool autoDocVersion)
         {
             if (!autoDocVersion)
-            {
                 return;
-            }
+
             wrtr.WriteStartElement("div");
             wrtr.WriteAttributeString("id", "content");
             wrtr.WriteStartElement("hr");
@@ -61,11 +55,9 @@ namespace XmlRpc.Server.Protocol
             wrtr.WriteEndElement();
         }
 
-        public static void WriteType(
-          XmlWriter wrtr,
-          Type type)
+        public static void WriteType(XmlWriter wrtr, Type type)
         {
-            ArrayList structs = new ArrayList();
+            var structs = new ArrayList();
 
             wrtr.WriteStartElement("div");
             wrtr.WriteAttributeString("id", "content");
@@ -79,13 +71,14 @@ namespace XmlRpc.Server.Protocol
             wrtr.WriteStartElement("br");
             wrtr.WriteEndElement();
 
-            if (svcInfo.Doc != "")
+            if (!string.IsNullOrWhiteSpace(svcInfo.Doc))
             {
                 wrtr.WriteStartElement("p");
                 wrtr.WriteAttributeString("class", "intro");
                 wrtr.WriteString(svcInfo.Doc);
                 wrtr.WriteEndElement();
             }
+
             wrtr.WriteStartElement("p");
             wrtr.WriteAttributeString("class", "intro");
             wrtr.WriteString("The following methods are supported:");
@@ -93,50 +86,45 @@ namespace XmlRpc.Server.Protocol
 
             wrtr.WriteStartElement("ul");
 
-            foreach (XmlRpcMethodInfo mthdInfo in svcInfo.Methods)
+            foreach (var mthdInfo in svcInfo.Methods)
             {
-                if (!mthdInfo.IsHidden)
-                {
-                    wrtr.WriteStartElement("li");
-                    wrtr.WriteStartElement("a");
-                    wrtr.WriteAttributeString("href", "#" + mthdInfo.XmlRpcName);
-                    wrtr.WriteString(mthdInfo.XmlRpcName);
-                    wrtr.WriteEndElement();
-                    wrtr.WriteEndElement();
-                }
+                if (mthdInfo.IsHidden)
+                    continue;
+
+                wrtr.WriteStartElement("li");
+                wrtr.WriteStartElement("a");
+                wrtr.WriteAttributeString("href", "#" + mthdInfo.XmlRpcName);
+                wrtr.WriteString(mthdInfo.XmlRpcName);
+                wrtr.WriteEndElement();
+                wrtr.WriteEndElement();
             }
 
             wrtr.WriteEndElement();
 
-            foreach (XmlRpcMethodInfo mthdInfo in svcInfo.Methods)
+            foreach (var mthdInfo in svcInfo.Methods)
             {
-                if (mthdInfo.IsHidden == false)
+                if (!mthdInfo.IsHidden)
                     WriteMethod(wrtr, mthdInfo, structs);
             }
 
-            for (int j = 0; j < structs.Count; j++)
-            {
+            for (var j = 0; j < structs.Count; j++)
                 WriteStruct(wrtr, structs[j] as Type, structs);
-            }
 
             wrtr.WriteEndElement();
         }
 
-        static void WriteMethod(
-      XmlWriter wrtr,
-      XmlRpcMethodInfo mthdInfo,
-      ArrayList structs)
+        static void WriteMethod(XmlWriter wrtr, XmlRpcMethodInfo mthdInfo, ArrayList structs)
         {
             wrtr.WriteStartElement("span");
 
             wrtr.WriteStartElement("h2");
             wrtr.WriteStartElement("a");
-            wrtr.WriteAttributeString("name", "#" + mthdInfo.XmlRpcName);
-            wrtr.WriteString("method " + mthdInfo.XmlRpcName);
+            wrtr.WriteAttributeString("name", $"#{mthdInfo.XmlRpcName}");
+            wrtr.WriteString($"method {mthdInfo.XmlRpcName}");
             wrtr.WriteEndElement();
             wrtr.WriteEndElement();
 
-            if (mthdInfo.Doc != "")
+            if (!string.IsNullOrWhiteSpace(mthdInfo.Doc))
             {
                 wrtr.WriteStartElement("p");
                 wrtr.WriteAttributeString("class", "intro");
@@ -165,7 +153,9 @@ namespace XmlRpc.Server.Protocol
 
                     wrtr.WriteStartElement("td");
                     if (parInfo.Doc == "")
+                    {
                         wrtr.WriteString(parInfo.Name);
+                    }
                     else
                     {
                         wrtr.WriteString(parInfo.Name);
@@ -220,18 +210,15 @@ namespace XmlRpc.Server.Protocol
             wrtr.WriteEndElement();
         }
 
-        static void WriteStruct(
-      XmlWriter wrtr,
-      Type structType,
-      ArrayList structs)
+        static void WriteStruct(XmlWriter wrtr, Type structType, ArrayList structs)
         {
             wrtr.WriteStartElement("span");
 
             wrtr.WriteStartElement("h2");
             wrtr.WriteStartElement("a");
-            wrtr.WriteAttributeString("name", "#" + structType.Name);
+            wrtr.WriteAttributeString("name", $"#{structType.Name}");
 
-            wrtr.WriteString("class " + structType.Name);
+            wrtr.WriteString($"class {structType.Name}");
             wrtr.WriteEndElement();
             wrtr.WriteEndElement();
 
@@ -246,20 +233,17 @@ namespace XmlRpc.Server.Protocol
             wrtr.WriteAttributeString("cellpadding", "5");
             wrtr.WriteAttributeString("width", "90%");
 
-            MappingAction structAction = MappingAction.Error;
-            Attribute structAttr = Attribute.GetCustomAttribute(structType,
-              typeof(XmlRpcMissingMappingAttribute));
+            var structAction = MappingAction.Error;
+            var structAttr = Attribute.GetCustomAttribute(structType, typeof(XmlRpcMissingMappingAttribute));
             if (structAttr != null && structAttr is XmlRpcMissingMappingAttribute)
-            {
                 structAction = (structAttr as XmlRpcMissingMappingAttribute).Action;
-            }
 
-            MemberInfo[] mis = structType.GetMembers();
-            foreach (MemberInfo mi in mis)
+            var mis = structType.GetMembers();
+            foreach (var mi in mis)
             {
                 if (mi.MemberType == MemberTypes.Field)
                 {
-                    FieldInfo fi = (FieldInfo)mi;
+                    var fi = (FieldInfo)mi;
 
                     wrtr.WriteStartElement("tr");
 
@@ -269,17 +253,14 @@ namespace XmlRpc.Server.Protocol
                     wrtr.WriteEndElement();
 
                     wrtr.WriteStartElement("td");
-                    MappingAction memberAction = structAction;
-                    Attribute attr = Attribute.GetCustomAttribute(fi,
-                      typeof(XmlRpcMissingMappingAttribute));
+                    var memberAction = structAction;
+                    var attr = Attribute.GetCustomAttribute(fi, typeof(XmlRpcMissingMappingAttribute));
                     if (attr != null && attr is XmlRpcMissingMappingAttribute)
-                    {
                         memberAction = (attr as XmlRpcMissingMappingAttribute).Action;
-                    }
+
                     string memberName = fi.Name + " ";
                     string desc = "";
-                    Attribute mmbrAttr = Attribute.GetCustomAttribute(fi,
-                      typeof(XmlRpcMemberAttribute));
+                    var mmbrAttr = Attribute.GetCustomAttribute(fi, typeof(XmlRpcMemberAttribute));
                     if (attr != null && mmbrAttr is XmlRpcMemberAttribute)
                     {
                         if ((mmbrAttr as XmlRpcMemberAttribute).Member != "")
@@ -326,20 +307,14 @@ namespace XmlRpc.Server.Protocol
             wrtr.WriteEndElement();
         }
 
-        static void WriteTitle(
-          XmlWriter wrtr,
-          string title)
+        static void WriteTitle(XmlWriter wrtr, string title)
         {
             wrtr.WriteStartElement("title");
             wrtr.WriteString(title);
             wrtr.WriteEndElement();
         }
 
-        static void WriteType(
-          XmlWriter wrtr,
-          Type type,
-          bool isparams,
-          ArrayList structs)
+        static void WriteType(XmlWriter wrtr, Type type, bool isparams, ArrayList structs)
         {
             // TODO: following is hack for case when type is object
             string xmlRpcType;
