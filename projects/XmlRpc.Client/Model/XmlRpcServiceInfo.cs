@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using XmlRpc.Client.Attributes;
@@ -208,15 +209,10 @@ namespace XmlRpc.Client.Model
             get { return methodInfos; }
         }
 
-        public XmlRpcMethodInfo GetMethod(
-          String methodName)
+        public XmlRpcMethodInfo[] GetMethods(string methodName)
         {
-            foreach (XmlRpcMethodInfo mthdInfo in methodInfos)
-            {
-                if (mthdInfo.XmlRpcName == methodName)
-                    return mthdInfo;
-            }
-            return null;
+            var infos = methodInfos.Where(info => info.XmlRpcName.Equals(methodName, StringComparison.OrdinalIgnoreCase));
+            return infos.Distinct().ToArray();
         }
 
         XmlRpcServiceInfo()
