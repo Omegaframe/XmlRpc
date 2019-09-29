@@ -1,5 +1,5 @@
 using System;
-using System.Collections;
+using System.Linq;
 using XmlRpc.Client.Attributes;
 using XmlRpc.Client.Exceptions;
 using XmlRpc.Client.Model;
@@ -8,82 +8,51 @@ namespace XmlRpc.Server.Protocol
 {
     public class SystemMethodsBase : MarshalByRefObject
     {
-        [XmlRpcMethod("system.listMethods", IntrospectionMethod = true,
-           Description =
-           "Return an array of all available XML-RPC methods on this Service.")]
-        public string[] System__List__Methods___()
+        [XmlRpcMethod("system.listMethods", IntrospectionMethod = true, Description = "Return an array of all available XML-RPC methods on this Service.")]
+        public string[] SystemListMethods()
         {
-            XmlRpcServiceInfo svcInfo = XmlRpcServiceInfo.CreateServiceInfo(
-                                          this.GetType());
-            ArrayList alist = new ArrayList();
-            foreach (XmlRpcMethodInfo mthdInfo in svcInfo.Methods)
-            {
-                if (!mthdInfo.IsHidden)
-                    alist.Add(mthdInfo.XmlRpcName);
-            }
-            return (String[])alist.ToArray(typeof(string));
+            var svcInfo = XmlRpcServiceInfo.CreateServiceInfo(GetType());
+            var list = svcInfo.Methods.Where(m => !m.IsHidden).Select(m => m.XmlRpcName);
+
+            return list.ToArray();
         }
 
-        [XmlRpcMethod("system.methodSignature", IntrospectionMethod = true,
-           Description =
-           "Given the name of a method, return an array of legal signatures. " +
-           "Each signature is an array of strings. The first item of each " +
-           "signature is the return type, and any others items are parameter " +
-           "types.")]
-        public Array System__Method__Signature___(string MethodName)
+        [XmlRpcMethod("system.methodSignature", IntrospectionMethod = true, Description = "Given the name of a method, return an array of legal signatures. Each signature is an array of strings. The first item of each signature is the return type, and any others items are parameter types.")]
+        public Array SystemMethodSignature(string methodName)
         {
             //TODO: support overloaded methods
-            XmlRpcServiceInfo svcInfo = XmlRpcServiceInfo.CreateServiceInfo(
-              this.GetType());
-            XmlRpcMethodInfo mthdInfo = svcInfo.GetMethod(MethodName);
-            if (mthdInfo == null)
-            {
-                throw new XmlRpcFaultException(880,
-                  "Request for information on unsupported method");
-            }
-            if (mthdInfo.IsHidden)
-            {
-                throw new XmlRpcFaultException(881,
-                  "Information not available on this method");
-            }
-            //XmlRpcTypes.CheckIsXmlRpcMethod(mi);
-            var alist = new ArrayList
-            {
-                XmlRpcServiceInfo.GetXmlRpcTypeString(mthdInfo.ReturnType)
-            };
-            foreach (XmlRpcParameterInfo paramInfo in mthdInfo.Parameters)
-            {
-                alist.Add(XmlRpcServiceInfo.GetXmlRpcTypeString(paramInfo.Type));
-            }
-            string[] types = (string[])alist.ToArray(typeof(string));
-            var retalist = new ArrayList
-            {
-                types
-            };
-            Array retarray = retalist.ToArray(typeof(string[]));
-            return retarray;
+
+            var mthdInfo = GetMethodInfoOrThrow(methodName);
+
+            var returnType = XmlRpcServiceInfo.GetXmlRpcTypeString(mthdInfo.ReturnType);
+            var parameters = mthdInfo.Parameters.Select(p => XmlRpcServiceInfo.GetXmlRpcTypeString(p.Type));
+
+            return parameters.Prepend(returnType).ToArray();
         }
 
-        [XmlRpcMethod("system.methodHelp", IntrospectionMethod = true,
-           Description =
-           "Given the name of a method, return a help string.")]
-        public string System__Method__Help___(string MethodName)
+        [XmlRpcMethod("system.methodHelp", IntrospectionMethod = true, Description = "Given the name of a method, return a help string.")]
+        public string SystemMethodHelp(string methodName)
         {
             //TODO: support overloaded methods?
-            XmlRpcServiceInfo svcInfo = XmlRpcServiceInfo.CreateServiceInfo(
-              this.GetType());
-            XmlRpcMethodInfo mthdInfo = svcInfo.GetMethod(MethodName);
-            if (mthdInfo == null)
-            {
-                throw new XmlRpcFaultException(880,
-                  "Request for information on unsupported method");
-            }
-            if (mthdInfo.IsHidden)
-            {
-                throw new XmlRpcFaultException(881,
-                  "Information not available for this method");
-            }
+
+            var mthdInfo = GetMethodInfoOrThrow(methodName);
             return mthdInfo.Doc;
+        }
+
+        XmlRpcMethodInfo GetMethodInfoOrThrow(string methodName)
+        {
+            //TODO: support overloaded methods?
+
+            var svcInfo = XmlRpcServiceInfo.CreateServiceInfo(GetType());
+            var mthdInfo = svcInfo.GetMethod(methodName);
+
+            if (mthdInfo == null)
+                throw new XmlRpcFaultException(880, $"Request for information on unsupported method '{methodName}'");
+
+            if (mthdInfo.IsHidden)
+                throw new XmlRpcFaultException(881, $"Request for information on hidden method '{methodName}'");
+
+            return mthdInfo;
         }
     }
 }
