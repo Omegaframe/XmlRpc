@@ -389,23 +389,27 @@ namespace XmlRpc.Client
             xtw.WriteStartDocument();
             xtw.WriteStartElement("", "methodResponse", "");
             xtw.WriteStartElement("", "params", "");
-            // "void" methods actually return an empty string value
-            if (ret == null)
-            {
-                ret = "";
-            }
             xtw.WriteStartElement("", "param", "");
-            // TODO: use global action setting
-            MappingAction mappingAction = MappingAction.Error;
-            try
+            // "void" methods actually return an empty value
+            if (ret != null)
             {
-                Serialize(xtw, ret, mappingAction);
+                // TODO: use global action setting
+                MappingAction mappingAction = MappingAction.Error;
+                try
+                {
+                    Serialize(xtw, ret, mappingAction);
+                }
+                catch (XmlRpcUnsupportedTypeException ex)
+                {
+                    throw new XmlRpcInvalidReturnType(string.Format(
+                      "Return value is of, or contains an instance of, type {0} which "
+                      + "cannot be mapped to an XML-RPC type", ex.UnsupportedType));
+                }
             }
-            catch (XmlRpcUnsupportedTypeException ex)
+            else
             {
-                throw new XmlRpcInvalidReturnType(string.Format(
-                  "Return value is of, or contains an instance of, type {0} which "
-                  + "cannot be mapped to an XML-RPC type", ex.UnsupportedType));
+                xtw.WriteStartElement("", "value", "");
+                xtw.WriteEndElement();
             }
             xtw.WriteEndElement();
             xtw.WriteEndElement();
