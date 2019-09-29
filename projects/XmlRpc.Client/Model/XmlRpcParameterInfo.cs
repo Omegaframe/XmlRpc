@@ -4,56 +4,25 @@ namespace XmlRpc.Client.Model
 {
     public class XmlRpcParameterInfo
     {
-        public XmlRpcParameterInfo()
-        {
-        }
+        public string Doc { get; set; }
+        public bool IsParams { get; set; }
+        public string XmlRpcName { get; set; }
+        public Type Type { get; set; }
+        public string XmlRpcType { get; set; }
 
-        public String Doc
+        public string Name
         {
-            get { return doc; }
-            set { doc = value; }
-        }
-
-        public bool IsParams
-        {
-            get { return isparams; }
-            set { isparams = value; }
-        }
-
-        public String Name
-        {
-            get { return name; }
+            get { return _name; }
             set
             {
-                name = value;
-                if (xmlRpcName == "")
-                    xmlRpcName = name;
+                _name = value;
+                if (string.IsNullOrWhiteSpace(XmlRpcName))
+                    XmlRpcName = _name;
             }
         }
 
-        public String XmlRpcName
-        {
-            get { return xmlRpcName; }
-            set { xmlRpcName = value; }
-        }
+        string _name;
 
-        public Type Type
-        {
-            get { return type; }
-            set { type = value; }
-        }
-
-        public string XmlRpcType
-        {
-            get { return xmlRpcType; }
-            set { xmlRpcType = value; }
-        }
-
-        string doc;
-        string name;
-        Type type;
-        string xmlRpcName;
-        string xmlRpcType;
-        bool isparams;
+        public XmlRpcParameterInfo() { }
     }
 }

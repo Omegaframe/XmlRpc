@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace XmlRpc.Client.Model
+﻿namespace XmlRpc.Client.Model
 {
     public class XmlRpcResponse
     {
@@ -8,10 +6,12 @@ namespace XmlRpc.Client.Model
         {
             retVal = null;
         }
+
         public XmlRpcResponse(object retValue)
         {
             retVal = retValue;
         }
+
         public object retVal;
     }
 }

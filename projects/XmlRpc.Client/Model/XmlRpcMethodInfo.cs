@@ -5,78 +5,30 @@ namespace XmlRpc.Client.Model
 {
     public class XmlRpcMethodInfo : IComparable
     {
-        public XmlRpcMethodInfo()
-        {
-        }
+        public bool IsHidden { get; set; }
 
-        public bool IsHidden
-        {
-            get { return isHidden; }
-            set { isHidden = value; }
-        }
+        public string Doc { get; set; } = string.Empty;
 
-        public String Doc
-        {
-            get { return doc; }
-            set { doc = value; }
-        }
+        public MethodInfo MethodInfo { get; set; }
 
-        public MethodInfo MethodInfo
-        {
-            get { return mi; }
-            set { mi = value; }
-        }
+        public string MiName { get; set; } = string.Empty;
 
-        public String MiName
-        {
-            get { return name; }
-            set { name = value; }
-        }
+        public XmlRpcParameterInfo[] Parameters { get; set; }
 
-        public XmlRpcParameterInfo[] Parameters
-        {
-            get { return paramInfos; }
-            set { paramInfos = value; }
-        }
+        public Type ReturnType { get; set; }
 
-        public Type ReturnType
-        {
-            get { return returnType; }
-            set { returnType = value; }
-        }
+        public string ReturnXmlRpcType { get; set; }
 
-        public string ReturnXmlRpcType
-        {
-            get { return returnXmlRpcType; }
-            set { returnXmlRpcType = value; }
-        }
+        public string ReturnDoc { get; set; } = string.Empty;
 
-        public String ReturnDoc
-        {
-            get { return returnDoc; }
-            set { returnDoc = value; }
-        }
+        public string XmlRpcName { get; set; } = string.Empty;
 
-        public String XmlRpcName
-        {
-            get { return xmlRpcName; }
-            set { xmlRpcName = value; }
-        }
+        public XmlRpcMethodInfo() { }
 
         public int CompareTo(object obj)
         {
-            XmlRpcMethodInfo xmi = (XmlRpcMethodInfo)obj;
-            return this.xmlRpcName.CompareTo(xmi.xmlRpcName);
+            var xmi = (XmlRpcMethodInfo)obj;
+            return XmlRpcName.CompareTo(xmi.XmlRpcName);
         }
-
-        MethodInfo mi;
-        bool isHidden;
-        string doc = "";
-        string name = "";
-        string xmlRpcName = "";
-        string returnDoc = "";
-        Type returnType;
-        string returnXmlRpcType;
-        XmlRpcParameterInfo[] paramInfos;
     }
 }

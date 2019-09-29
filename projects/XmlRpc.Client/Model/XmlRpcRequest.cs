@@ -5,9 +5,16 @@ namespace XmlRpc.Client.Model
 {
     public class XmlRpcRequest
     {
-        public XmlRpcRequest()
-        {
-        }
+        static int _created;
+
+        public string method = null;
+        public object[] args = null;
+        public MethodInfo mi = null;
+        public Guid proxyId;
+        public int number = System.Threading.Interlocked.Increment(ref _created);
+        public string xmlRpcMethod = null;
+
+        public XmlRpcRequest() { }
 
         public XmlRpcRequest(string methodName, object[] parameters, MethodInfo methodInfo)
         {
@@ -16,8 +23,7 @@ namespace XmlRpc.Client.Model
             mi = methodInfo;
         }
 
-        public XmlRpcRequest(string methodName, object[] parameters,
-          MethodInfo methodInfo, string XmlRpcMethod, Guid proxyGuid)
+        public XmlRpcRequest(string methodName, object[] parameters, MethodInfo methodInfo, string XmlRpcMethod, Guid proxyGuid)
         {
             method = methodName;
             args = parameters;
@@ -31,13 +37,5 @@ namespace XmlRpc.Client.Model
             method = methodName;
             args = parameters;
         }
-
-        public String method = null;
-        public object[] args = null;
-        public MethodInfo mi = null;
-        public Guid proxyId;
-        static int _created;
-        public int number = System.Threading.Interlocked.Increment(ref _created);
-        public String xmlRpcMethod = null;
     }
 }
