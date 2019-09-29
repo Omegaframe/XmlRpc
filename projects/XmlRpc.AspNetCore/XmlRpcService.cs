@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using XmlRpc.AspNetCore.Adapter;
-using XmlRpc.Server;
 using Microsoft.AspNetCore.Http;
+using XmlRpc.Server.Protocol;
 
 namespace XmlRpc.AspNetCore
 {

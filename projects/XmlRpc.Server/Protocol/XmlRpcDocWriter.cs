@@ -6,7 +6,7 @@ using XmlRpc.Client.Attributes;
 using XmlRpc.Client.DataTypes;
 using XmlRpc.Client.Model;
 
-namespace XmlRpc.Server
+namespace XmlRpc.Server.Protocol
 {
     public class XmlRpcDocWriter
     {
@@ -17,7 +17,7 @@ namespace XmlRpc.Server
 
             WriteType(wrtr, type);
 
-            WriteFooter(wrtr, type, autoDocVersion);
+            WriteFooter(wrtr, autoDocVersion);
 
             // Todo: Check required?
             //wrtr.WriteEndElement("div");
@@ -36,8 +36,7 @@ namespace XmlRpc.Server
             wrtr.WriteEndElement();
         }
 
-        public static void WriteFooter(XmlWriter wrtr, Type type,
-          bool autoDocVersion)
+        public static void WriteFooter(XmlWriter wrtr, bool autoDocVersion)
         {
             if (!autoDocVersion)
             {

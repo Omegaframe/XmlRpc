@@ -1,8 +1,8 @@
 
 using System.IO;
-using XmlRpc.Server;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
+using XmlRpc.Server.Interfaces;
 
 namespace XmlRpc.AspNetCore.Adapter
 {

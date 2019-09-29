@@ -4,7 +4,7 @@ using XmlRpc.Client.Attributes;
 using XmlRpc.Client.Exceptions;
 using XmlRpc.Client.Model;
 
-namespace XmlRpc.Server
+namespace XmlRpc.Server.Protocol
 {
     public class SystemMethodsBase : MarshalByRefObject
     {

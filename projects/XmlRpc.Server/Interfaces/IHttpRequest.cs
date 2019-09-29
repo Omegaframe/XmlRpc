@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace XmlRpc.Server
+namespace XmlRpc.Server.Interfaces
 {
     public interface IHttpRequest
     {

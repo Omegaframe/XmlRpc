@@ -1,11 +1,10 @@
-using System;
 using System.IO;
 
-namespace XmlRpc.Server
+namespace XmlRpc.Server.Interfaces
 {
     public interface IHttpResponse
     {
-        Int64 ContentLength { set; }
+        long ContentLength { set; }
         string ContentType { get; set; }
         TextWriter Output { get; }
         Stream OutputStream { get; }

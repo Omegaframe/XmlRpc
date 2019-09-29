@@ -2,8 +2,9 @@ using System;
 using System.IO;
 using System.Xml;
 using XmlRpc.Client.Attributes;
+using XmlRpc.Server.Interfaces;
 
-namespace XmlRpc.Server
+namespace XmlRpc.Server.Protocol
 {
     public class XmlRpcHttpServerProtocol : XmlRpcServerProtocol,
       IHttpRequestHandler
@@ -20,21 +21,21 @@ namespace XmlRpc.Server
                   Attribute.GetCustomAttribute(GetType(), typeof(XmlRpcServiceAttribute));
                 if (svcAttr != null && svcAttr.AutoDocumentation == false)
                 {
-                    HandleUnsupportedMethod(httpReq, httpResp);
+                    HandleUnsupportedMethod(httpResp);
                 }
                 else
                 {
                     bool autoDocVersion = true;
                     if (svcAttr != null)
                         autoDocVersion = svcAttr.AutoDocVersion;
-                    HandleGET(httpReq, httpResp, autoDocVersion);
+                    HandleGET(httpResp, autoDocVersion);
                 }
                 return;
             }
             // calls on service methods are via POST
             if (httpReq.HttpMethod != "POST")
             {
-                HandleUnsupportedMethod(httpReq, httpResp);
+                HandleUnsupportedMethod(httpResp);
                 return;
             }
             //Context.Response.AppendHeader("Server", "XML-RPC.NET");
@@ -49,9 +50,8 @@ namespace XmlRpc.Server
         }
 
         protected void HandleGET(
-          IHttpRequest httpReq,
           IHttpResponse httpResp,
-          bool autoDocVersion)
+            bool autoDocVersion)
         {
             using (MemoryStream stm = new MemoryStream())
             {
@@ -72,7 +72,6 @@ namespace XmlRpc.Server
         }
 
         protected void HandleUnsupportedMethod(
-          IHttpRequest httpReq,
           IHttpResponse httpResp)
         {
             // RFC 2068 error 405: "The method specified in the Request-Line   

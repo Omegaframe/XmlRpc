@@ -1,7 +1,7 @@
 
 using System.IO;
-using XmlRpc.Server;
 using Microsoft.AspNetCore.Http;
+using XmlRpc.Server.Interfaces;
 
 namespace XmlRpc.AspNetCore.Adapter
 {

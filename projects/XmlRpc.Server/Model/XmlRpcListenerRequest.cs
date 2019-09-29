@@ -1,10 +1,13 @@
 using System.IO;
 using System.Net;
+using XmlRpc.Server.Interfaces;
 
-namespace XmlRpc.Server
+namespace XmlRpc.Server.Model
 {
     public class XmlRpcListenerRequest : IHttpRequest
     {
+        readonly HttpListenerRequest _request;
+
         public XmlRpcListenerRequest(HttpListenerRequest request)
         {
             _request = request;
@@ -19,7 +22,5 @@ namespace XmlRpc.Server
         {
             get { return _request.HttpMethod; }
         }
-
-        HttpListenerRequest _request;
     }
 }

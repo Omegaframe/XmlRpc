@@ -7,10 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NuGet.Build.Packaging" Version="0.2.0" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\XmlRpc.Client\XmlRpc.Client.csproj" />
   </ItemGroup>
 </Project>

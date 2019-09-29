@@ -1,7 +1,9 @@
 using System;
 using System.Net;
+using XmlRpc.Server.Interfaces;
+using XmlRpc.Server.Protocol;
 
-namespace XmlRpc.Server
+namespace XmlRpc.Server.Model
 {
     public abstract class XmlRpcListenerService : XmlRpcHttpServerProtocol
     {

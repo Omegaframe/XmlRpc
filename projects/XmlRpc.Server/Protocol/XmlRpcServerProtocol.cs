@@ -7,7 +7,7 @@ using XmlRpc.Client.Attributes;
 using XmlRpc.Client.Exceptions;
 using XmlRpc.Client.Model;
 
-namespace XmlRpc.Server
+namespace XmlRpc.Server.Protocol
 {
     public class XmlRpcServerProtocol : SystemMethodsBase
     {
@@ -56,14 +56,14 @@ namespace XmlRpc.Server
 
         public XmlRpcResponse Invoke(XmlRpcRequest request)
         {
-            MethodInfo mi = null;
+            MethodInfo mi;
             if (request.mi != null)
             {
                 mi = request.mi;
             }
             else
             {
-                mi = this.GetType().GetMethod(request.method);
+                mi = GetType().GetMethod(request.method);
             }
             // exceptions thrown during an MethodInfo.Invoke call are
             // package as inner of 
@@ -80,19 +80,6 @@ namespace XmlRpc.Server
             }
             XmlRpcResponse response = new XmlRpcResponse(reto);
             return response;
-        }
-
-        bool IsVisibleXmlRpcMethod(MethodInfo mi)
-        {
-            bool ret = false;
-            Attribute attr = Attribute.GetCustomAttribute(mi,
-              typeof(XmlRpcMethodAttribute));
-            if (attr != null)
-            {
-                XmlRpcMethodAttribute mattr = (XmlRpcMethodAttribute)attr;
-                ret = !mattr.Hidden;
-            }
-            return ret;
         }
     }
 }

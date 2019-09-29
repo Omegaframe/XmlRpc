@@ -1,5 +1,5 @@
 ﻿using Demo.Contracts;
-using XmlRpc.Server;
+using XmlRpc.Server.Model;
 
 namespace XmlRpc.ServerDemo
 {
