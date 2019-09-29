@@ -559,8 +559,8 @@ namespace XmlRpc.Client
             if (_xmlEncoding != null)
                 useEncoding = _xmlEncoding;
             XmlRpcAsyncResult asr = new XmlRpcAsyncResult(this, xmlRpcReq,
-              useEncoding, _useEmptyParamsTag, _useIndentation, _indentation,
-              _useIntTag, _useStringTag, webReq, callback, outerAsyncState, 0);
+                useEncoding, _useEmptyParamsTag, _useIndentation, _indentation,
+                _useIntTag, _useStringTag, webReq, callback, outerAsyncState);
             webReq.BeginGetRequestStream(new AsyncCallback(GetRequestStreamCallback),
               asr);
             if (!asr.IsCompleted)

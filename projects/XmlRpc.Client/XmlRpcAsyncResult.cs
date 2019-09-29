@@ -10,17 +10,13 @@ namespace XmlRpc.Client
 {
     public class XmlRpcAsyncResult : IAsyncResult
     {
-        // IAsyncResult members
-        public object AsyncState
-        {
-            get { return userAsyncState; }
-        }
+        public object AsyncState { get; }
 
         public WaitHandle AsyncWaitHandle
         {
             get
             {
-                bool completed = isCompleted;
+                var completed = IsCompleted;
                 if (manualResetEvent == null)
                 {
                     lock (this)
@@ -29,8 +25,9 @@ namespace XmlRpc.Client
                             manualResetEvent = new ManualResetEvent(completed);
                     }
                 }
-                if (!completed && isCompleted)
+                if (!completed && IsCompleted)
                     manualResetEvent.Set();
+
                 return manualResetEvent;
             }
         }
@@ -45,96 +42,62 @@ namespace XmlRpc.Client
             }
         }
 
-        public bool IsCompleted
-        {
-            get { return isCompleted; }
-        }
+        public bool IsCompleted { get; private set; }
 
-        public CookieCollection ResponseCookies
-        {
-            get { return _responseCookies; }
-        }
+        public CookieCollection ResponseCookies => _responseCookies;
 
-        public WebHeaderCollection ResponseHeaders
-        {
-            get { return _responseHeaders; }
-        }
+        public WebHeaderCollection ResponseHeaders => _responseHeaders;
 
-        public bool UseEmptyParamsTag
-        {
-            get { return _useEmptyParamsTag; }
-        }
+        public bool UseEmptyParamsTag { get; }
 
-        public bool UseIndentation
-        {
-            get { return _useIndentation; }
-        }
+        public bool UseIndentation { get; }
 
-        public int Indentation
-        {
-            get { return _indentation; }
-        }
+        public int Indentation { get; }
 
-        public bool UseIntTag
-        {
-            get { return _useIntTag; }
-        }
+        public bool UseIntTag { get; }
 
-        public bool UseStringTag
-        {
-            get { return _useStringTag; }
-        }
+        public bool UseStringTag { get; }
 
-        // public members
         public void Abort()
         {
-            if (request != null)
-                request.Abort();
+            if (Request != null)
+                Request.Abort();
         }
 
-        public Exception Exception
-        {
-            get { return exception; }
-        }
+        public Exception Exception { get; private set; }
 
-        public XmlRpcClientProtocol ClientProtocol
-        {
-            get { return clientProtocol; }
-        }
+        public XmlRpcClientProtocol ClientProtocol { get; }
 
-        //internal members
         internal XmlRpcAsyncResult(
-          XmlRpcClientProtocol ClientProtocol,
-          XmlRpcRequest XmlRpcReq,
-          Encoding XmlEncoding,
-          bool useEmptyParamsTag,
-          bool useIndentation,
-          int indentation,
-          bool UseIntTag,
-          bool UseStringTag,
-          WebRequest Request,
-          AsyncCallback UserCallback,
-          object UserAsyncState,
-          int retryNumber)
+          XmlRpcClientProtocol clientProtocol,
+            XmlRpcRequest XmlRpcReq,
+            Encoding xmlEncoding,
+            bool useEmptyParamsTag,
+            bool useIndentation,
+            int indentation,
+            bool useIntTag,
+            bool useStringTag,
+            WebRequest request,
+            AsyncCallback UserCallback,
+            object UserAsyncState)
         {
-            xmlRpcRequest = XmlRpcReq;
-            clientProtocol = ClientProtocol;
-            request = Request;
-            userAsyncState = UserAsyncState;
+            XmlRpcRequest = XmlRpcReq;
+            ClientProtocol = clientProtocol;
+            Request = request;
+            AsyncState = UserAsyncState;
             userCallback = UserCallback;
             completedSynchronously = true;
-            xmlEncoding = XmlEncoding;
-            _useEmptyParamsTag = useEmptyParamsTag;
-            _useIndentation = useIndentation;
-            _indentation = indentation;
-            _useIntTag = UseIntTag;
-            _useStringTag = UseStringTag;
+            XmlEncoding = xmlEncoding;
+            UseEmptyParamsTag = useEmptyParamsTag;
+            UseIndentation = useIndentation;
+            Indentation = indentation;
+            UseIntTag = useIntTag;
+            UseStringTag = useStringTag;
         }
 
-        internal void Complete(
-          Exception ex)
+        internal void Complete(Exception ex)
         {
-            exception = ex;
+            Exception = ex;
             Complete();
         }
 
@@ -142,20 +105,23 @@ namespace XmlRpc.Client
         {
             try
             {
-                if (responseStream != null)
+                if (ResponseStream != null)
                 {
-                    responseStream.Close();
-                    responseStream = null;
+                    ResponseStream.Close();
+                    ResponseStream = null;
                 }
-                if (responseBufferedStream != null)
-                    responseBufferedStream.Position = 0;
+
+                if (ResponseBufferedStream != null)
+                    ResponseBufferedStream.Position = 0;
             }
             catch (Exception ex)
             {
-                if (exception == null)
-                    exception = ex;
+                if (Exception == null)
+                    Exception = ex;
             }
-            isCompleted = true;
+
+            IsCompleted = true;
+
             try
             {
                 if (manualResetEvent != null)
@@ -163,91 +129,44 @@ namespace XmlRpc.Client
             }
             catch (Exception ex)
             {
-                if (exception == null)
-                    exception = ex;
+                if (Exception == null)
+                    Exception = ex;
             }
-            if (userCallback != null)
-                userCallback(this);
+
+            userCallback?.Invoke(this);
         }
 
         internal WebResponse WaitForResponse()
         {
-            if (!isCompleted)
+            if (!IsCompleted)
                 AsyncWaitHandle.WaitOne();
-            if (exception != null)
-                throw exception;
-            return response;
+
+            if (Exception != null)
+                throw Exception;
+
+            return Response;
         }
 
-        internal bool EndSendCalled
-        {
-            get { return endSendCalled; }
-            set { endSendCalled = value; }
-        }
+        internal bool EndSendCalled { get; set; } = false;
 
-        internal byte[] Buffer
-        {
-            get { return buffer; }
-            set { buffer = value; }
-        }
+        internal byte[] Buffer { get; set; }
 
-        internal WebRequest Request
-        {
-            get { return request; }
-        }
+        internal WebRequest Request { get; }
 
-        internal WebResponse Response
-        {
-            get { return response; }
-            set { response = value; }
-        }
+        internal WebResponse Response { get; set; }
 
-        internal Stream ResponseStream
-        {
-            get { return responseStream; }
-            set { responseStream = value; }
-        }
+        internal Stream ResponseStream { get; set; }
 
-        internal XmlRpcRequest XmlRpcRequest
-        {
-            get { return xmlRpcRequest; }
-            set { xmlRpcRequest = value; }
-        }
+        internal XmlRpcRequest XmlRpcRequest { get; set; }
 
-        internal Stream ResponseBufferedStream
-        {
-            get { return responseBufferedStream; }
-            set { responseBufferedStream = value; }
-        }
+        internal Stream ResponseBufferedStream { get; set; }
 
-        internal Encoding XmlEncoding
-        {
-            get { return xmlEncoding; }
-        }
+        internal Encoding XmlEncoding { get; }
 
-        XmlRpcClientProtocol clientProtocol;
-        WebRequest request;
-        AsyncCallback userCallback;
-        object userAsyncState;
+        readonly AsyncCallback userCallback;
         bool completedSynchronously;
-        bool isCompleted;
-        bool endSendCalled = false;
         ManualResetEvent manualResetEvent;
-        Exception exception;
-        WebResponse response;
-        Stream responseStream;
-        Stream responseBufferedStream;
-        byte[] buffer;
-        XmlRpcRequest xmlRpcRequest;
-        Encoding xmlEncoding;
-        bool _useEmptyParamsTag;
-        bool _useIndentation;
-        int _indentation;
-        bool _useIntTag;
-        bool _useStringTag;
-
         internal CookieCollection _responseCookies;
         internal WebHeaderCollection _responseHeaders;
-
     }
 }

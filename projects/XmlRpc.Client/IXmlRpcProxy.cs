@@ -12,7 +12,6 @@ namespace XmlRpc.Client
     {
         bool AllowAutoRedirect { get; set; }
 
-
         X509CertificateCollection ClientCertificates { get; }
         string ConnectionGroupName { get; set; }
         CookieContainer CookieContainer { get; }
@@ -37,7 +36,7 @@ namespace XmlRpc.Client
         bool PreAuthenticate { get; set; }
 
         [Browsable(false)]
-        System.Version ProtocolVersion { get; set; }
+        Version ProtocolVersion { get; set; }
 
         [Browsable(false)]
         IWebProxy Proxy { get; set; }
@@ -67,14 +66,11 @@ namespace XmlRpc.Client
 
         string XmlRpcMethod { get; set; }
 
-        // introspecton methods
         string[] SystemListMethods();
         object[] SystemMethodSignature(string MethodName);
         string SystemMethodHelp(string MethodName);
 
-        // events
         event XmlRpcRequestEventHandler RequestEvent;
         event XmlRpcResponseEventHandler ResponseEvent;
-
     }
 }
