@@ -1,7 +1,5 @@
-using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Linq;
 using XmlRpc.Server.Interfaces;
 
 namespace XmlRpc.Server.Model
