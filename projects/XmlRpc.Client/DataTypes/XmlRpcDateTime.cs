@@ -4,16 +4,16 @@ namespace XmlRpc.Client.DataTypes
 {
     public class XmlRpcDateTime
     {
-        DateTime _value;
+        readonly DateTime _value;
 
         public XmlRpcDateTime()
         {
-            this._value = new DateTime();
+            _value = new DateTime();
         }
 
         public XmlRpcDateTime(DateTime val)
         {
-            this._value = val;
+            _value = val;
         }
 
         public override string ToString()
@@ -26,18 +26,16 @@ namespace XmlRpc.Client.DataTypes
             return _value.GetHashCode();
         }
 
-        public override bool Equals(
-          object o)
+        public override bool Equals(object o)
         {
             if (o == null || !(o is XmlRpcDateTime))
                 return false;
-            XmlRpcDateTime dbl = o as XmlRpcDateTime;
-            return (dbl._value == _value);
+
+            var dbl = o as XmlRpcDateTime;
+            return dbl._value == _value;
         }
 
-        public static bool operator ==(
-          XmlRpcDateTime xi,
-          XmlRpcDateTime xj)
+        public static bool operator ==(XmlRpcDateTime xi, XmlRpcDateTime xj)
         {
             if (((object)xi) == null && ((object)xj) == null)
                 return true;
@@ -47,9 +45,7 @@ namespace XmlRpc.Client.DataTypes
                 return xi._value == xj._value;
         }
 
-        public static bool operator !=(
-          XmlRpcDateTime xi,
-          XmlRpcDateTime xj)
+        public static bool operator !=(XmlRpcDateTime xi, XmlRpcDateTime xj)
         {
             return !(xi == xj);
         }

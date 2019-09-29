@@ -3,7 +3,7 @@ namespace XmlRpc.Client.DataTypes
 {
     public class XmlRpcInt
     {
-        int _value;
+        readonly int _value;
 
         public XmlRpcInt()
         {
@@ -25,18 +25,16 @@ namespace XmlRpc.Client.DataTypes
             return _value.GetHashCode();
         }
 
-        public override bool Equals(
-          object o)
+        public override bool Equals(object o)
         {
             if (o == null || !(o is XmlRpcInt))
                 return false;
-            XmlRpcInt dbl = o as XmlRpcInt;
-            return (dbl._value == _value);
+
+            var dbl = o as XmlRpcInt;
+            return dbl._value == _value;
         }
 
-        public static bool operator ==(
-          XmlRpcInt xi,
-          XmlRpcInt xj)
+        public static bool operator ==(XmlRpcInt xi, XmlRpcInt xj)
         {
             if (((object)xi) == null && ((object)xj) == null)
                 return true;
@@ -46,9 +44,7 @@ namespace XmlRpc.Client.DataTypes
                 return xi._value == xj._value;
         }
 
-        public static bool operator !=(
-          XmlRpcInt xi,
-          XmlRpcInt xj)
+        public static bool operator !=(XmlRpcInt xi, XmlRpcInt xj)
         {
             return !(xi == xj);
         }

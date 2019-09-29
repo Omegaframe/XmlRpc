@@ -3,15 +3,13 @@ namespace XmlRpc.Client.DataTypes
 {
     public class XmlRpcBoolean
     {
-        bool _value;
+        readonly bool _value;
 
-        public XmlRpcBoolean()
-        {
-        }
+        public XmlRpcBoolean() { }
 
         public XmlRpcBoolean(bool val)
         {
-            this._value = val;
+            _value = val;
         }
 
         public override string ToString()
@@ -24,18 +22,16 @@ namespace XmlRpc.Client.DataTypes
             return _value.GetHashCode();
         }
 
-        public override bool Equals(
-          object o)
+        public override bool Equals(object o)
         {
             if (o == null || !(o is XmlRpcBoolean))
                 return false;
-            XmlRpcBoolean dbl = o as XmlRpcBoolean;
-            return (dbl._value == _value);
+
+            var dbl = o as XmlRpcBoolean;
+            return dbl._value == _value;
         }
 
-        public static bool operator ==(
-          XmlRpcBoolean xi,
-          XmlRpcBoolean xj)
+        public static bool operator ==(XmlRpcBoolean xi, XmlRpcBoolean xj)
         {
             if (((object)xi) == null && ((object)xj) == null)
                 return true;
@@ -45,9 +41,7 @@ namespace XmlRpc.Client.DataTypes
                 return xi._value == xj._value;
         }
 
-        public static bool operator !=(
-          XmlRpcBoolean xi,
-          XmlRpcBoolean xj)
+        public static bool operator !=(XmlRpcBoolean xi, XmlRpcBoolean xj)
         {
             return !(xi == xj);
         }
