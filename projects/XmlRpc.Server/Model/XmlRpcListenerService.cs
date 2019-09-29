@@ -1,6 +1,5 @@
 using System;
 using System.Net;
-using XmlRpc.Server.Interfaces;
 using XmlRpc.Server.Protocol;
 
 namespace XmlRpc.Server.Model
@@ -11,19 +10,14 @@ namespace XmlRpc.Server.Model
         {
             try
             {
-                IHttpRequest req = new XmlRpcListenerRequest(RequestContext.Request);
-                IHttpResponse resp = new XmlRpcListenerResponse(RequestContext.Response);
+                var req = new XmlRpcListenerRequest(RequestContext.Request);
+                var resp = new XmlRpcListenerResponse(RequestContext.Response);
                 HandleHttpRequest(req, resp);
             }
             catch (Exception ex)
             {
-                // "Internal server error"
-                RequestContext.Response.StatusCode = 500;
+                RequestContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
                 RequestContext.Response.StatusDescription = ex.Message;
-            }
-            finally
-            {
-                RequestContext.Response.OutputStream.Close();
             }
         }
     }

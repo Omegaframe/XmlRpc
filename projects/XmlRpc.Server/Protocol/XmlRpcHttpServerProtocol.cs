@@ -1,87 +1,71 @@
 using System;
 using System.IO;
+using System.Net;
+using System.Net.Http;
+using System.Net.Mime;
 using System.Xml;
 using XmlRpc.Client.Attributes;
 using XmlRpc.Server.Interfaces;
 
 namespace XmlRpc.Server.Protocol
 {
-    public class XmlRpcHttpServerProtocol : XmlRpcServerProtocol,
-      IHttpRequestHandler
+    public class XmlRpcHttpServerProtocol : XmlRpcServerProtocol, IHttpRequestHandler
     {
-        public void HandleHttpRequest(
-          IHttpRequest httpReq,
-          IHttpResponse httpResp)
+        public void HandleHttpRequest(IHttpRequest httpReq, IHttpResponse httpResp)
         {
-            // GET has its own handler because it can be used to return a 
-            // HTML description of the service
-            if (httpReq.HttpMethod == "GET")
+            if (httpReq.HttpMethod.Equals(HttpMethod.Get.Method, StringComparison.OrdinalIgnoreCase))
             {
-                XmlRpcServiceAttribute svcAttr = (XmlRpcServiceAttribute)
-                  Attribute.GetCustomAttribute(GetType(), typeof(XmlRpcServiceAttribute));
-                if (svcAttr != null && svcAttr.AutoDocumentation == false)
-                {
-                    HandleUnsupportedMethod(httpResp);
-                }
-                else
-                {
-                    bool autoDocVersion = true;
-                    if (svcAttr != null)
-                        autoDocVersion = svcAttr.AutoDocVersion;
-                    HandleGET(httpResp, autoDocVersion);
-                }
+                HandleGet(httpResp);
                 return;
             }
-            // calls on service methods are via POST
-            if (httpReq.HttpMethod != "POST")
+
+            if (!httpReq.HttpMethod.Equals(HttpMethod.Post.Method, StringComparison.OrdinalIgnoreCase))
             {
                 HandleUnsupportedMethod(httpResp);
                 return;
             }
-            //Context.Response.AppendHeader("Server", "XML-RPC.NET");
-            // process the request
-            Stream responseStream = Invoke(httpReq.InputStream);
-            httpResp.ContentType = "text/xml";
+
+            var responseStream = Invoke(httpReq.InputStream);
+
+            httpResp.StatusCode = (int)HttpStatusCode.OK;
+            httpResp.ContentType = MediaTypeNames.Text.Xml;
             httpResp.ContentLength = responseStream.Length;
 
-            Stream respStm = httpResp.OutputStream;
-            responseStream.CopyTo(respStm);
-            respStm.Flush();
+            responseStream.CopyTo(httpResp.OutputStream);
         }
 
-        protected void HandleGET(
-          IHttpResponse httpResp,
-            bool autoDocVersion)
+        void HandleGet(IHttpResponse httpResp)
         {
-            using (MemoryStream stm = new MemoryStream())
+            var svcAttr = (XmlRpcServiceAttribute)Attribute.GetCustomAttribute(GetType(), typeof(XmlRpcServiceAttribute));
+            if (svcAttr?.AutoDocumentation == false)
             {
-                using (var wrtr = new XmlTextWriter(new StreamWriter(stm)))
-                {
-                    XmlRpcDocWriter.WriteDoc(wrtr, this.GetType(), autoDocVersion);
-                    wrtr.Flush();
-                    httpResp.ContentType = "text/html";
-                    httpResp.ContentLength = stm.Length;
+                HandleUnsupportedMethod(httpResp);
+                return;
+            }
 
-                    stm.Position = 0;
-                    Stream respStm = httpResp.OutputStream;
-                    stm.CopyTo(respStm);
-                    respStm.Flush();
-                    httpResp.StatusCode = 200;
-                }
+            using (var stm = new MemoryStream())
+            using (var streamWriter = new StreamWriter(stm))
+            using (var wrtr = new XmlTextWriter(streamWriter))
+            {
+                var autoDocVersion = svcAttr?.AutoDocVersion ?? true;
+                XmlRpcDocWriter.WriteDoc(wrtr, GetType(), autoDocVersion);
+                wrtr.Flush();
+
+                httpResp.StatusCode = (int)HttpStatusCode.OK;
+                httpResp.ContentType = MediaTypeNames.Text.Html;
+                httpResp.ContentLength = stm.Length;
+
+                stm.Seek(0, SeekOrigin.Begin);
+                stm.CopyTo(httpResp.OutputStream);
             }
         }
 
-        protected void HandleUnsupportedMethod(
-          IHttpResponse httpResp)
+        void HandleUnsupportedMethod(IHttpResponse httpResp)
         {
-            // RFC 2068 error 405: "The method specified in the Request-Line   
-            // is not allowed for the resource identified by the Request-URI. 
-            // The response MUST include an Allow header containing a list 
-            // of valid methods for the requested resource."
-            //!! add Allow header
-            httpResp.StatusCode = 405;
-            httpResp.StatusDescription = "Unsupported HTTP verb";
+            httpResp.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
+            httpResp.AdditionalHeaders.Add(HttpResponseHeader.Allow, HttpMethod.Get.Method);
+            httpResp.AdditionalHeaders.Add(HttpResponseHeader.Allow, HttpMethod.Post.Method);
+            httpResp.StatusDescription = "Unsupported HTTP Method";
         }
-
     }
 }

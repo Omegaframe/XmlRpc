@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Linq;
 using XmlRpc.Server.Interfaces;
 
 namespace XmlRpc.Server.Model
@@ -14,37 +16,36 @@ namespace XmlRpc.Server.Model
             response.SendChunked = false;
         }
 
+        public WebHeaderCollection AdditionalHeaders
+        {
+            get => _response.Headers;
+        }
+
         long IHttpResponse.ContentLength
         {
-            set { _response.ContentLength64 = value; }
+            set => _response.ContentLength64 = value;
         }
 
         string IHttpResponse.ContentType
         {
-            get { return _response.ContentType; }
-            set { _response.ContentType = value; }
+            get => _response.ContentType;
+            set => _response.ContentType = value;
         }
 
-        TextWriter IHttpResponse.Output
-        {
-            get { return new StreamWriter(_response.OutputStream); }
-        }
+        TextWriter IHttpResponse.Output => new StreamWriter(_response.OutputStream);
 
-        Stream IHttpResponse.OutputStream
-        {
-            get { return _response.OutputStream; }
-        }
+        Stream IHttpResponse.OutputStream => _response.OutputStream;
 
         int IHttpResponse.StatusCode
         {
-            get { return _response.StatusCode; }
-            set { _response.StatusCode = value; }
+            get => _response.StatusCode;
+            set => _response.StatusCode = value;
         }
 
         string IHttpResponse.StatusDescription
         {
-            get { return _response.StatusDescription; }
-            set { _response.StatusDescription = value; }
+            get => _response.StatusDescription;
+            set => _response.StatusDescription = value;
         }
     }
 }

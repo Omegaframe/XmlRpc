@@ -1,4 +1,5 @@
 using System.IO;
+using System.Net;
 
 namespace XmlRpc.Server.Interfaces
 {
@@ -10,5 +11,6 @@ namespace XmlRpc.Server.Interfaces
         Stream OutputStream { get; }
         int StatusCode { get; set; }
         string StatusDescription { get; set; }
+        WebHeaderCollection AdditionalHeaders { get; }
     }
 }

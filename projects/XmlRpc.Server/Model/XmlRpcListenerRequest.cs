@@ -13,14 +13,8 @@ namespace XmlRpc.Server.Model
             _request = request;
         }
 
-        public Stream InputStream
-        {
-            get { return _request.InputStream; }
-        }
+        public Stream InputStream => _request.InputStream;
 
-        public string HttpMethod
-        {
-            get { return _request.HttpMethod; }
-        }
+        public string HttpMethod => _request.HttpMethod;
     }
 }
