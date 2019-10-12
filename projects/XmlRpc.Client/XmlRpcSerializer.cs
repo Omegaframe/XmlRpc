@@ -712,7 +712,7 @@ namespace XmlRpc.Client
                                 if (mmbr != "")
                                     member = mmbr;
                             }
-                            if (pi.GetValue(o, null) == null)
+                            if (pi.GetValue(o) == null)
                             {
                                 MappingAction memberAction = MemberMappingAction(o.GetType(),
                                   pi.Name, structAction);

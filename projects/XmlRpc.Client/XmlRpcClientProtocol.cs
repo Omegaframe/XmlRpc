@@ -288,7 +288,7 @@ namespace XmlRpc.Client
             return xmlRpcResp;
         }
 
-        MethodInfo GetMethodInfoFromName(object clientObj, string methodName, object[] parameters)
+        public static MethodInfo GetMethodInfoFromName(object clientObj, string methodName, object[] parameters)
         {
             var paramTypes = new Type[0];
             if (parameters != null)
