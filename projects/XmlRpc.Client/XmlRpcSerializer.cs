@@ -256,30 +256,19 @@ namespace XmlRpc.Client
 
         public XmlRpcRequest DeserializeRequest(XmlDocument xdoc, Type svcType)
         {
-            XmlRpcRequest request = new XmlRpcRequest();
-            XmlNode callNode = SelectSingleNode(xdoc, "methodCall");
+            var request = new XmlRpcRequest();
+
+            var callNode = SelectSingleNode(xdoc, "methodCall");
             if (callNode == null)
-            {
-                throw new XmlRpcInvalidXmlRpcException(
-                  "Request XML not valid XML-RPC - missing methodCall element.");
-            }
-            XmlNode methodNode = SelectSingleNode(callNode, "methodName");
-            if (methodNode == null)
-            {
-                throw new XmlRpcInvalidXmlRpcException(
-                  "Request XML not valid XML-RPC - missing methodName element.");
-            }
-            if (methodNode.FirstChild == null)
-            {
-                throw new XmlRpcInvalidXmlRpcException(
-                  "Request XML not valid XML-RPC - missing methodName element.");
-            }
+                throw new XmlRpcInvalidXmlRpcException("Request XML not valid XML-RPC - missing methodCall element.");
+
+            var methodNode = SelectSingleNode(callNode, "methodName");
+            if (methodNode?.FirstChild == null)
+                throw new XmlRpcInvalidXmlRpcException("Request XML not valid XML-RPC - missing methodName element.");
+
             request.method = methodNode.FirstChild.Value;
             if (request.method == "")
-            {
-                throw new XmlRpcInvalidXmlRpcException(
-                  "Request XML not valid XML-RPC - empty methodName.");
-            }
+                throw new XmlRpcInvalidXmlRpcException("Request XML not valid XML-RPC - empty methodName.");
 
             request.mi = null;
             var possibleMethods = new MethodInfo[0];
@@ -288,13 +277,15 @@ namespace XmlRpc.Client
             // retrieve info for the method which handles this XML-RPC method
             var svcInfo = XmlRpcServiceInfo.CreateServiceInfo(svcType);
             possibleMethods = svcInfo.GetMethodInfos(request.method);
-            // if a service type has been specified and we cannot find the requested
-            // method then we must throw an exception
+
+            // throw if method does not exists
             if (!possibleMethods.Any())
                 throw new XmlRpcUnsupportedMethodException($"unsupported method called: {request.method}");
 
-            XmlNode paramsNode = SelectSingleNode(callNode, "params");
-            XmlNode[] paramNodes = SelectNodes(paramsNode, "param");
+            // todo: overloads with parameter types instead of simple count
+            // get overloaded method if any
+            var paramsNode = SelectSingleNode(callNode, "params");
+            var paramNodes = SelectNodes(paramsNode, "param");
             request.mi = possibleMethods.FirstOrDefault(m => m.GetParameters().Length == paramNodes.Length);
             if (request.mi == null)
                 throw new XmlRpcInvalidParametersException($"The method {request.method} was called with wrong parameter count");
