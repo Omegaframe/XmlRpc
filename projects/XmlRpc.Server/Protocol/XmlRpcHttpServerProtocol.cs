@@ -19,19 +19,19 @@ namespace XmlRpc.Server.Protocol
                 return;
             }
 
-            if (!httpReq.HttpMethod.Equals(HttpMethod.Post.Method, StringComparison.OrdinalIgnoreCase))
+            if (httpReq.HttpMethod.Equals(HttpMethod.Post.Method, StringComparison.OrdinalIgnoreCase))
             {
-                HandleUnsupportedMethod(httpResp);
+                var responseStream = Invoke(httpReq.InputStream);
+
+                httpResp.StatusCode = (int)HttpStatusCode.OK;
+                httpResp.ContentType = MediaTypeNames.Text.Xml;
+                httpResp.ContentLength = responseStream.Length;
+
+                responseStream.CopyTo(httpResp.OutputStream);
                 return;
             }
 
-            var responseStream = Invoke(httpReq.InputStream);
-
-            httpResp.StatusCode = (int)HttpStatusCode.OK;
-            httpResp.ContentType = MediaTypeNames.Text.Xml;
-            httpResp.ContentLength = responseStream.Length;
-
-            responseStream.CopyTo(httpResp.OutputStream);
+            HandleUnsupportedMethod(httpResp);
         }
 
         void HandleGet(IHttpResponse httpResp)

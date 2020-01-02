@@ -9,17 +9,12 @@ namespace XmlRpc.Server.Protocol
 {
     public class SystemMethodsBase : MarshalByRefObject
     {
-        public class Multicall
-        {
-            public string MehtodName { get; set; }
-            public object[] Params { get; set; }
-        }
-
         [XmlRpcMethod("system.multicall", IntrospectionMethod = true, Description = "Executes multiple requests in a single call.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "parameter is required for xmlrpc signature but is not used here")]
         public Array SystemMulticall(Array requests)
         {
-            // do nothing. this is handeled elsewhere
-            return new int[0];
+            // do nothing. this is a placeholder. this is handeled in XmlRpcServerProtocol
+            return Array.Empty<int>();
         }
 
         [XmlRpcMethod("system.listMethods", IntrospectionMethod = true, Description = "Return an array of all available XML-RPC methods on this Service.")]

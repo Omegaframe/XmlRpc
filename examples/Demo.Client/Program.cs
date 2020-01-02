@@ -7,7 +7,6 @@ namespace XmlRpc.Core.ClientDemo
     {
         static void Main(string[] args)
         {
-
             var proxy = XmlRpcProxyGen.Create<IAddServiceProxy>();
             proxy.Url = "http://127.0.0.1:5678/xmlrpc";
 

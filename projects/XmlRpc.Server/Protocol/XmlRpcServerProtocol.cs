@@ -38,24 +38,7 @@ namespace XmlRpc.Server.Protocol
             XmlRpcResponse xmlRpcResp = null;
             if (xmlRpcReq.method.Equals("system.multicall", StringComparison.OrdinalIgnoreCase))
             {
-                var resultList = new List<object>();
-                var args = xmlRpcReq.args.First() as Array;
-                var requests = args.Cast<XmlRpcStruct>().Select(x => new Multicall { MehtodName = (string)x["methodName"], Params = (object[])x["params"] }).ToArray();
-
-                foreach (var request in requests)
-                {
-                    var singleRequest = new XmlRpcRequest(request.MehtodName, request.Params);
-                    var svcInfo = XmlRpcServiceInfo.CreateServiceInfo(GetType());
-
-                    var possibleMethods = svcInfo.GetMethodInfos(request.MehtodName);
-                    var method = possibleMethods.First(p => p.GetParameters().Length == request.Params.Length);
-                    singleRequest.mi = method;
-
-                    var result = Invoke(singleRequest);
-
-                    resultList.Add(result);
-                }
-
+                var resultList = InvokeMulticall(xmlRpcReq);
                 xmlRpcResp = new XmlRpcResponse(resultList.Where(x => x != null).ToArray());
             }
             else
@@ -112,6 +95,29 @@ namespace XmlRpc.Server.Protocol
 
                 throw ex;
             }
+        }
+
+        List<object> InvokeMulticall(XmlRpcRequest multicallRequest)
+        {
+            var resultList = new List<object>();
+            var args = multicallRequest.args.First() as Array;
+            var requests = args.Cast<XmlRpcStruct>().Select(x => new MulticallFunction { MehtodName = (string)x["methodName"], Params = (object[])x["params"] }).ToArray();
+
+            foreach (var request in requests)
+            {
+                var singleRequest = new XmlRpcRequest(request.MehtodName, request.Params);
+                var svcInfo = XmlRpcServiceInfo.CreateServiceInfo(GetType());
+
+                var possibleMethods = svcInfo.GetMethodInfos(request.MehtodName);
+                var method = possibleMethods.First(p => p.GetParameters().Length == request.Params.Length);
+                singleRequest.mi = method;
+
+                var result = Invoke(singleRequest);
+
+                resultList.Add(result);
+            }
+
+            return resultList;
         }
     }
 }
