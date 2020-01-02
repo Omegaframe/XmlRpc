@@ -7,7 +7,7 @@ namespace XmlRpc.Listener
 {
     public abstract class XmlRpcService : XmlRpcHttpServerProtocol
     {
-        public virtual void ProcessRequest(HttpListenerContext RequestContext)
+        public void ProcessRequest(HttpListenerContext RequestContext)
         {
             try
             {
