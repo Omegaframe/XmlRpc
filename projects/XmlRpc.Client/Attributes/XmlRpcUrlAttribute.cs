@@ -12,9 +12,6 @@ namespace XmlRpc.Client.Attributes
             Uri = UriString;
         }
 
-        public override string ToString()
-        {
-            return "Uri : " + Uri;
-        }
+        public override string ToString() => $"Uri: {Uri}";
     }
 }

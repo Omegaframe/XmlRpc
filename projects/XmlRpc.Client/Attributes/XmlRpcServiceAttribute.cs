@@ -5,20 +5,31 @@ namespace XmlRpc.Client.Attributes
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
     public class XmlRpcServiceAttribute : Attribute
     {
-        public bool AutoDocumentation { get; set; } = true;
-        public bool AutoDocVersion { get; set; } = true;
-        public string Description { get; set; } = string.Empty;
-        public int Indentation { get; set; } = 2;
-        public bool Introspection { get; set; } = false;
-        public string Name { get; set; } = string.Empty;
-        public bool UseIndentation { get; set; } = true;
-        public bool UseIntTag { get; set; } = false;
-        public bool UseStringTag { get; set; } = true;
-        public string XmlEncoding { get; set; } = null;
+        public bool AutoDocumentation { get; set; }
+        public bool AutoDocVersion { get; set; }
+        public string Description { get; set; }
+        public int Indentation { get; set; }
+        public bool Introspection { get; set; }
+        public string Name { get; set; }
+        public bool UseIndentation { get; set; }
+        public bool UseIntTag { get; set; }
+        public bool UseStringTag { get; set; }
+        public string XmlEncoding { get; set; }
 
-        public override string ToString()
+        public XmlRpcServiceAttribute()
         {
-            return "Description : " + Description;
+            AutoDocumentation = true;
+            AutoDocVersion = true;
+            Description = string.Empty;
+            Indentation = 2;
+            Introspection = false;
+            Name = string.Empty;
+            UseIndentation = true;
+            UseIntTag = false;
+            UseStringTag = true;
+            XmlEncoding = null;
         }
+
+        public override string ToString() => $"Description: {Description}";
     }
 }

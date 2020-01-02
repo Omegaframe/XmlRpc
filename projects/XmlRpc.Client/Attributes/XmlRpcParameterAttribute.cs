@@ -5,19 +5,20 @@ namespace XmlRpc.Client.Attributes
     [AttributeUsage(AttributeTargets.Parameter)]
     public class XmlRpcParameterAttribute : Attribute
     {
-        public string Name { get; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
+        public string Name { get; }
+        public string Description { get; set; }
 
-        public XmlRpcParameterAttribute() { }
+        public XmlRpcParameterAttribute()
+        {
+            Name = string.Empty;
+            Description = string.Empty;
+        }
 
-        public XmlRpcParameterAttribute(string name)
+        public XmlRpcParameterAttribute(string name) : base()
         {
             Name = name;
         }
 
-        public override string ToString()
-        {
-            return "Description : " + Description;
-        }
+        public override string ToString() => $"Description: {Description}";
     }
 }

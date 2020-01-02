@@ -5,19 +5,20 @@ namespace XmlRpc.Client.Attributes
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
     public class XmlRpcMemberAttribute : Attribute
     {
-        public string Member { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
+        public string Member { get; set; }
+        public string Description { get; set; }
 
-        public XmlRpcMemberAttribute() { }
+        public XmlRpcMemberAttribute()
+        {
+            Member = string.Empty;
+            Description = string.Empty;
+        }
 
-        public XmlRpcMemberAttribute(string member)
+        public XmlRpcMemberAttribute(string member) : base()
         {
             Member = member;
         }
 
-        public override string ToString()
-        {
-            return "Member : " + Member;
-        }
+        public override string ToString() => $"Member: {Member}";
     }
 }
