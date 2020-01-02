@@ -14,8 +14,8 @@ namespace XmlRpc.Kestrel.Internal
 
         public Task InvokeAsync(HttpContext context, RequestDelegate next)
         {
-            var request = new KestrelHttpRequest(context);
-            var response = new KestrelHttpResponse(context);
+            var request = new KestrelHttpRequest(context.Request);
+            var response = new KestrelHttpResponse(context.Response);
 
             _xmlrpcService.HandleHttpRequest(request, response);
 

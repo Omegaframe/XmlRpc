@@ -6,34 +6,34 @@ namespace XmlRpc.Kestrel.Internal
 {
     class KestrelHttpResponse : IHttpResponse
     {
+        public string StatusDescription { get; set; }
         public long ContentLength
         {
-            set => _kestrelContext.Response.ContentLength = value;
+            set => _kestrelResponse.ContentLength = value;
         }
-
         public string ContentType
         {
-            get => _kestrelContext.Response.ContentType;
-            set => _kestrelContext.Response.ContentType = value;
+            get => _kestrelResponse.ContentType;
+            set => _kestrelResponse.ContentType = value;
         }
-
-        public TextWriter Output => new StreamWriter(_kestrelContext.Response.Body);
-
-        public Stream OutputStream => _kestrelContext.Response.Body;
-
-        public int StatusCode { get => _kestrelContext.Response.StatusCode; set => _kestrelContext.Response.StatusCode = value; }
-        public string StatusDescription { get; set; }
-
-        readonly HttpContext _kestrelContext;
-
-        public KestrelHttpResponse(HttpContext kestrelContext)
+        public int StatusCode
         {
-            _kestrelContext = kestrelContext;
+            get => _kestrelResponse.StatusCode;
+            set => _kestrelResponse.StatusCode = value;
+        }
+        public TextWriter Output => new StreamWriter(_kestrelResponse.Body);
+        public Stream OutputStream => _kestrelResponse.Body;   
+
+        readonly HttpResponse _kestrelResponse;
+
+        public KestrelHttpResponse(HttpResponse kestrelResponse)
+        {
+            _kestrelResponse = kestrelResponse;
         }
 
         public void AddAdditionalHeaders(string key, string value)
         {
-            _kestrelContext.Response.Headers.Add(key, value);
+            _kestrelResponse.Headers.Add(key, value);
         }
     }
 }

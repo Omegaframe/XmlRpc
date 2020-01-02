@@ -6,14 +6,14 @@ namespace XmlRpc.Kestrel.Internal
 {
     class KestrelHttpRequest : IHttpRequest
     {
-        public Stream InputStream => _kestrelContext.Request.Body;
-        public string HttpMethod => _kestrelContext.Request.Method;
+        public Stream InputStream => _kestrelRequest.Body;
+        public string HttpMethod => _kestrelRequest.Method;
 
-        readonly HttpContext _kestrelContext;
+        readonly HttpRequest _kestrelRequest;
 
-        public KestrelHttpRequest(HttpContext kestrelContext)
+        public KestrelHttpRequest(HttpRequest kestrelRequest)
         {
-            _kestrelContext = kestrelContext;
+            _kestrelRequest = kestrelRequest;
         }
     }
 }
