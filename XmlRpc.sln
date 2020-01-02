@@ -9,15 +9,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo.Contracts", "examples\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo.Client", "examples\Demo.Client\Demo.Client.csproj", "{51D03B22-524A-4C9F-AC8B-8887C25F8358}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo.Server", "examples\Demo.Server\Demo.Server.csproj", "{3F22E3C6-5E8A-4854-973D-DBD77DE74874}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo.Server.Listener", "examples\Demo.Server.Listener\Demo.Server.Listener.csproj", "{3F22E3C6-5E8A-4854-973D-DBD77DE74874}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XmlRpc.Client", "projects\XmlRpc.Client\XmlRpc.Client.csproj", "{1C8A0274-5558-468B-ADA1-B45A6F6ACD0D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XmlRpc.Server", "projects\XmlRpc.Server\XmlRpc.Server.csproj", "{8A7EE436-B06E-4747-912E-3C97DDBE9917}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XmlRpc.Kestrel", "projects\XmlRpc.Kestrel\XmlRpc.Kestrel.csproj", "{18B82C1D-8A65-463A-8D07-77CB53F5111A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XmlRpc.Kestrel", "projects\XmlRpc.Kestrel\XmlRpc.Kestrel.csproj", "{18B82C1D-8A65-463A-8D07-77CB53F5111A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Kestrel", "examples\Demo.Kestrel\Demo.Kestrel.csproj", "{FFE439CD-5482-4361-AD33-8BA85A864479}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo.Server.Kestrel", "examples\Demo.Server.Kestrel\Demo.Server.Kestrel.csproj", "{FFE439CD-5482-4361-AD33-8BA85A864479}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XmlRpc.Listener", "projects\XmlRpc.Listener\XmlRpc.Listener.csproj", "{40937563-3C8A-4BB6-91B1-0A05F1ACEE52}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -53,6 +55,10 @@ Global
 		{FFE439CD-5482-4361-AD33-8BA85A864479}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FFE439CD-5482-4361-AD33-8BA85A864479}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FFE439CD-5482-4361-AD33-8BA85A864479}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40937563-3C8A-4BB6-91B1-0A05F1ACEE52}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40937563-3C8A-4BB6-91B1-0A05F1ACEE52}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40937563-3C8A-4BB6-91B1-0A05F1ACEE52}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40937563-3C8A-4BB6-91B1-0A05F1ACEE52}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\projects\XmlRpc.Server\XmlRpc.Server.csproj" />
+    <ProjectReference Include="..\..\projects\XmlRpc.Listener\XmlRpc.Listener.csproj" />
     <ProjectReference Include="..\Demo.Contracts\Demo.Contracts.csproj" />
   </ItemGroup>
 

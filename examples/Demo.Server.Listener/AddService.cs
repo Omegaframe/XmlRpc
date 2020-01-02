@@ -1,9 +1,9 @@
 ﻿using Demo.Contracts;
-using XmlRpc.Server.Model;
+using XmlRpc.Listener;
 
 namespace XmlRpc.ServerDemo
 {
-    internal class AddService : XmlRpcListenerService, IAddService
+    internal class AddService : XmlRpcService, IAddService
     {
         public int AddNumbers(int numberA, int numberB)
         {

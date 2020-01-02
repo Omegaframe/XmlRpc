@@ -1,10 +1,11 @@
 using System;
 using System.Net;
+using XmlRpc.Listener.Internal;
 using XmlRpc.Server.Protocol;
 
-namespace XmlRpc.Server.Model
+namespace XmlRpc.Listener
 {
-    public abstract class XmlRpcListenerService : XmlRpcHttpServerProtocol
+    public abstract class XmlRpcService : XmlRpcHttpServerProtocol
     {
         public virtual void ProcessRequest(HttpListenerContext RequestContext)
         {
