@@ -11,6 +11,6 @@ namespace XmlRpc.Server.Interfaces
         Stream OutputStream { get; }
         int StatusCode { get; set; }
         string StatusDescription { get; set; }
-        WebHeaderCollection AdditionalHeaders { get; }
+        void AddAdditionalHeaders(string key, string value);
     }
 }

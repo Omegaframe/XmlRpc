@@ -63,8 +63,8 @@ namespace XmlRpc.Server.Protocol
         void HandleUnsupportedMethod(IHttpResponse httpResp)
         {
             httpResp.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
-            httpResp.AdditionalHeaders.Add(HttpResponseHeader.Allow, HttpMethod.Get.Method);
-            httpResp.AdditionalHeaders.Add(HttpResponseHeader.Allow, HttpMethod.Post.Method);
+            httpResp.AddAdditionalHeaders(HttpResponseHeader.Allow.ToString(), HttpMethod.Get.Method);
+            httpResp.AddAdditionalHeaders(HttpResponseHeader.Allow.ToString(), HttpMethod.Post.Method);
             httpResp.StatusDescription = "Unsupported HTTP Method";
         }
     }

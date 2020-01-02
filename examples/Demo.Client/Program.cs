@@ -9,7 +9,7 @@ namespace XmlRpc.Core.ClientDemo
         {
 
             var proxy = XmlRpcProxyGen.Create<IAddServiceProxy>();
-            proxy.Url = "http://127.0.0.1:5678";
+            proxy.Url = "http://127.0.0.1:5678/xmlrpc";
 
             Console.WriteLine("Calling Demo.addNumbers with [3,4]...");
             var result = proxy.AddNumbers(3, 4);

@@ -14,11 +14,6 @@ namespace XmlRpc.Server.Model
             response.SendChunked = false;
         }
 
-        public WebHeaderCollection AdditionalHeaders
-        {
-            get => _response.Headers;
-        }
-
         long IHttpResponse.ContentLength
         {
             set => _response.ContentLength64 = value;
@@ -44,6 +39,11 @@ namespace XmlRpc.Server.Model
         {
             get => _response.StatusDescription;
             set => _response.StatusDescription = value;
+        }
+
+        public void AddAdditionalHeaders(string key, string value)
+        {
+            _response.Headers.Add(key, value);
         }
     }
 }
