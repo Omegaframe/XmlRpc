@@ -31,7 +31,7 @@ namespace Demo.Kestrel
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddXmlRpc<AddService>();
+            services.AddXmlRpc(new AddService());
         }
 
         public void Configure(IApplicationBuilder app)
