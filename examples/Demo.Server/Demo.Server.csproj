@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp30</TargetFramework>
+    <TargetFramework>netcoreapp31</TargetFramework>
     <ReleaseVersion>2.5.0</ReleaseVersion>
   </PropertyGroup>
 
