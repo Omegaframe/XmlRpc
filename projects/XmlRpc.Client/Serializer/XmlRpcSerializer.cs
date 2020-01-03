@@ -21,205 +21,206 @@ namespace XmlRpc.Client.Serializer
             Configuration = new SerializerConfig();
         }
 
-        public
-
-        void Serialize(
-          XmlTextWriter xtw,
-          object o,
-          MappingAction mappingAction)
+        public void Serialize(XmlTextWriter xtw, object o, MappingAction mappingAction)
         {
             Serialize(xtw, o, mappingAction, new ArrayList(16));
         }
 
-
-        public
-
-        void Serialize(
-          XmlTextWriter xtw,
-          object o,
-          MappingAction mappingAction,
-          ArrayList nestedObjs)
+        public void Serialize(XmlTextWriter xtw, object o, MappingAction mappingAction, ArrayList nestedObjs)
         {
             if (nestedObjs.Contains(o))
-                throw new XmlRpcUnsupportedTypeException(nestedObjs[0].GetType(),
-                  "Cannot serialize recursive data structure");
-            nestedObjs.Add(o);
+                throw new XmlRpcUnsupportedTypeException(nestedObjs[0].GetType(), "Cannot serialize recursive data structure");
+
             try
             {
-                xtw.WriteStartElement("", "value", "");
-                XmlRpcType xType = XmlRpcServiceInfo.GetXmlRpcType(o.GetType());
-                if (xType == XmlRpcType.tArray)
-                {
-                    xtw.WriteStartElement("", "array", "");
-                    xtw.WriteStartElement("", "data", "");
-                    Array a = (Array)o;
-                    foreach (object aobj in a)
-                    {
-                        if (aobj == null)
-                            throw new XmlRpcMappingSerializeException(String.Format(
-                              "Items in array cannot be null ({0}[]).",
-                          o.GetType().GetElementType()));
-                        Serialize(xtw, aobj, mappingAction, nestedObjs);
-                    }
-                    xtw.WriteEndElement();
-                    xtw.WriteEndElement();
-                }
-                else if (xType == XmlRpcType.tMultiDimArray)
-                {
-                    Array mda = (Array)o;
-                    int[] indices = new int[mda.Rank];
-                    BuildArrayXml(xtw, mda, 0, indices, mappingAction, nestedObjs);
-                }
-                else if (xType == XmlRpcType.tBase64)
-                {
-                    byte[] buf = (byte[])o;
-                    xtw.WriteStartElement("", "base64", "");
-                    xtw.WriteBase64(buf, 0, buf.Length);
-                    xtw.WriteEndElement();
-                }
-                else if (xType == XmlRpcType.tBoolean)
-                {
-                    bool boolVal;
-                    if (o is bool)
-                        boolVal = (bool)o;
-                    else
-                        boolVal = (bool)(XmlRpcBoolean)o;
-                    if (boolVal)
-                        xtw.WriteElementString("boolean", "1");
-                    else
-                        xtw.WriteElementString("boolean", "0");
-                }
-                else if (xType == XmlRpcType.tDateTime)
-                {
-                    DateTime dt;
-                    if (o is DateTime)
-                        dt = (DateTime)o;
-                    else
-                        dt = (XmlRpcDateTime)o;
-                    string sdt = dt.ToString("yyyyMMdd'T'HH':'mm':'ss",
-                    DateTimeFormatInfo.InvariantInfo);
-                    xtw.WriteElementString("dateTime.iso8601", sdt);
-                }
-                else if (xType == XmlRpcType.tDouble)
-                {
-                    double doubleVal;
-                    if (o is double)
-                        doubleVal = (double)o;
-                    else
-                        doubleVal = (XmlRpcDouble)o;
-                    xtw.WriteElementString("double", doubleVal.ToString(null,
-                    CultureInfo.InvariantCulture));
-                }
-                else if (xType == XmlRpcType.tHashtable)
-                {
-                    xtw.WriteStartElement("", "struct", "");
-                    XmlRpcStruct xrs = o as XmlRpcStruct;
-                    foreach (object obj in xrs.Keys)
-                    {
-                        string skey = obj as string;
-                        xtw.WriteStartElement("", "member", "");
-                        xtw.WriteElementString("name", skey);
-                        Serialize(xtw, xrs[skey], mappingAction, nestedObjs);
-                        xtw.WriteEndElement();
-                    }
-                    xtw.WriteEndElement();
-                }
-                else if (xType == XmlRpcType.tInt32)
-                {
-                    if (Configuration.UseIntTag)
-                        xtw.WriteElementString("int", o.ToString());
-                    else
-                        xtw.WriteElementString("i4", o.ToString());
-                }
-                else if (xType == XmlRpcType.tInt64)
-                {
-                    xtw.WriteElementString("i8", o.ToString());
-                }
-                else if (xType == XmlRpcType.tString)
-                {
-                    if (Configuration.UseStringTag)
-                        xtw.WriteElementString("string", (string)o);
-                    else
-                        xtw.WriteString((string)o);
-                }
-                else if (xType == XmlRpcType.tStruct)
-                {
-                    MappingAction structAction
-                      = StructMappingAction(o.GetType(), mappingAction);
-                    xtw.WriteStartElement("", "struct", "");
-                    MemberInfo[] mis = o.GetType().GetMembers();
-                    foreach (MemberInfo mi in mis)
-                    {
-                        if (Attribute.IsDefined(mi, typeof(NonSerializedAttribute)))
-                            continue;
-                        if (mi.MemberType == MemberTypes.Field)
-                        {
-                            FieldInfo fi = (FieldInfo)mi;
-                            string member = fi.Name;
-                            Attribute attrchk = Attribute.GetCustomAttribute(fi,
-                            typeof(XmlRpcMemberAttribute));
-                            if (attrchk != null && attrchk is XmlRpcMemberAttribute)
-                            {
-                                string mmbr = ((XmlRpcMemberAttribute)attrchk).Member;
-                                if (mmbr != "")
-                                    member = mmbr;
-                            }
-                            if (fi.GetValue(o) == null)
-                            {
-                                MappingAction memberAction = MemberMappingAction(o.GetType(),
-                                  fi.Name, structAction);
-                                if (memberAction == MappingAction.Ignore)
-                                    continue;
-                                throw new XmlRpcMappingSerializeException(@"Member """ + member +
-                                  @""" of class """ + o.GetType().Name + @""" cannot be null.");
-                            }
-                            xtw.WriteStartElement("", "member", "");
-                            xtw.WriteElementString("name", member);
-                            Serialize(xtw, fi.GetValue(o), mappingAction, nestedObjs);
-                            xtw.WriteEndElement();
-                        }
-                        else if (mi.MemberType == MemberTypes.Property)
-                        {
-                            PropertyInfo pi = (PropertyInfo)mi;
-                            string member = pi.Name;
-                            Attribute attrchk = Attribute.GetCustomAttribute(pi,
-                            typeof(XmlRpcMemberAttribute));
-                            if (attrchk != null && attrchk is XmlRpcMemberAttribute)
-                            {
-                                string mmbr = ((XmlRpcMemberAttribute)attrchk).Member;
-                                if (mmbr != "")
-                                    member = mmbr;
-                            }
-                            if (pi.GetValue(o) == null)
-                            {
-                                MappingAction memberAction = MemberMappingAction(o.GetType(),
-                                  pi.Name, structAction);
-                                if (memberAction == MappingAction.Ignore)
-                                    continue;
-                            }
-                            xtw.WriteStartElement("", "member", "");
-                            xtw.WriteElementString("name", member);
-                            Serialize(xtw, pi.GetValue(o, null), mappingAction, nestedObjs);
-                            xtw.WriteEndElement();
-                        }
-                    }
-                    xtw.WriteEndElement();
-                }
-                else if (xType == XmlRpcType.tVoid)
-                    xtw.WriteElementString("string", "");
-                else
-                    throw new XmlRpcUnsupportedTypeException(o.GetType());
-                xtw.WriteEndElement();
+                nestedObjs.Add(o);
+                TrySerialize(xtw, o, mappingAction, nestedObjs);
             }
             catch (System.NullReferenceException)
             {
-                throw new XmlRpcNullReferenceException("Attempt to serialize data "
-                  + "containing null reference");
+                throw new XmlRpcNullReferenceException("Attempt to serialize data containing null reference");
             }
             finally
             {
                 nestedObjs.RemoveAt(nestedObjs.Count - 1);
             }
+        }
+
+        void TrySerialize(XmlTextWriter xtw, object targetObject, MappingAction mappingAction, ArrayList nestedObjs)
+        {
+            xtw.WriteStartElement("", "value", "");
+            var xType = XmlRpcServiceInfo.GetXmlRpcType(targetObject.GetType());
+
+            if (xType == XmlRpcType.tArray)
+            {
+                xtw.WriteStartElement("", "array", "");
+                xtw.WriteStartElement("", "data", "");
+
+                foreach (var aobj in (Array)targetObject)
+                {
+                    if (aobj == null)
+                        throw new XmlRpcMappingSerializeException($"Items in array cannot be null ({targetObject.GetType().GetElementType()}[]).");
+
+                    Serialize(xtw, aobj, mappingAction, nestedObjs);
+                }
+
+                xtw.WriteEndElement();
+                xtw.WriteEndElement();
+            }
+            else if (xType == XmlRpcType.tMultiDimArray)
+            {
+                var mda = (Array)targetObject;
+                var indices = new int[mda.Rank];
+                BuildArrayXml(xtw, mda, 0, indices, mappingAction, nestedObjs);
+            }
+            else if (xType == XmlRpcType.tBase64)
+            {
+                var buf = (byte[])targetObject;
+                xtw.WriteStartElement("", "base64", "");
+                xtw.WriteBase64(buf, 0, buf.Length);
+                xtw.WriteEndElement();
+            }
+            else if (xType == XmlRpcType.tBoolean)
+            {
+                bool boolVal;
+                if (targetObject is bool)
+                    boolVal = (bool)targetObject;
+                else
+                    boolVal = (XmlRpcBoolean)targetObject;
+
+                if (boolVal)
+                    xtw.WriteElementString("boolean", "1");
+                else
+                    xtw.WriteElementString("boolean", "0");
+            }
+            else if (xType == XmlRpcType.tDateTime)
+            {
+                DateTime dt;
+                if (targetObject is DateTime)
+                    dt = (DateTime)targetObject;
+                else
+                    dt = (XmlRpcDateTime)targetObject;
+
+                var sdt = dt.ToString("yyyyMMdd'T'HH':'mm':'ss", DateTimeFormatInfo.InvariantInfo);
+                xtw.WriteElementString("dateTime.iso8601", sdt);
+            }
+            else if (xType == XmlRpcType.tDouble)
+            {
+                double doubleVal;
+                if (targetObject is double)
+                    doubleVal = (double)targetObject;
+                else
+                    doubleVal = (XmlRpcDouble)targetObject;
+
+                xtw.WriteElementString("double", doubleVal.ToString(null, CultureInfo.InvariantCulture));
+            }
+            else if (xType == XmlRpcType.tHashtable)
+            {
+                xtw.WriteStartElement("", "struct", "");
+                var xrs = targetObject as XmlRpcStruct;
+
+                foreach (object obj in xrs.Keys)
+                {
+                    var skey = obj as string;
+                    xtw.WriteStartElement("", "member", "");
+                    xtw.WriteElementString("name", skey);
+
+                    Serialize(xtw, xrs[skey], mappingAction, nestedObjs);
+
+                    xtw.WriteEndElement();
+                }
+
+                xtw.WriteEndElement();
+            }
+            else if (xType == XmlRpcType.tInt32)
+            {
+                if (Configuration.UseIntTag)
+                    xtw.WriteElementString("int", targetObject.ToString());
+                else
+                    xtw.WriteElementString("i4", targetObject.ToString());
+            }
+            else if (xType == XmlRpcType.tInt64)
+            {
+                xtw.WriteElementString("i8", targetObject.ToString());
+            }
+            else if (xType == XmlRpcType.tString)
+            {
+                if (Configuration.UseStringTag)
+                    xtw.WriteElementString("string", (string)targetObject);
+                else
+                    xtw.WriteString((string)targetObject);
+            }
+            else if (xType == XmlRpcType.tStruct)
+            {
+                xtw.WriteStartElement("", "struct", "");
+                var mis = targetObject.GetType().GetMembers();
+                var structAction = StructMappingAction(targetObject.GetType(), mappingAction);
+
+                foreach (var mi in mis)
+                {
+                    if (Attribute.IsDefined(mi, typeof(NonSerializedAttribute)))
+                        continue;
+
+                    if (mi.MemberType == MemberTypes.Field)
+                    {
+                        var fi = (FieldInfo)mi;
+                        var member = fi.Name;
+                        var attrchk = Attribute.GetCustomAttribute(fi, typeof(XmlRpcMemberAttribute));
+                        if (attrchk != null && attrchk is XmlRpcMemberAttribute)
+                        {
+                            var mmbr = ((XmlRpcMemberAttribute)attrchk).Member;
+                            if (mmbr != "")
+                                member = mmbr;
+                        }
+
+                        if (fi.GetValue(targetObject) == null)
+                        {
+                            var memberAction = MemberMappingAction(targetObject.GetType(), fi.Name, structAction);
+                            if (memberAction == MappingAction.Ignore)
+                                continue;
+
+                            throw new XmlRpcMappingSerializeException(@"Member """ + member + @""" of class """ + targetObject.GetType().Name + @""" cannot be null.");
+                        }
+
+                        xtw.WriteStartElement("", "member", "");
+                        xtw.WriteElementString("name", member);
+
+                        Serialize(xtw, fi.GetValue(targetObject), mappingAction, nestedObjs);
+
+                        xtw.WriteEndElement();
+                    }
+                    else if (mi.MemberType == MemberTypes.Property)
+                    {
+                        PropertyInfo pi = (PropertyInfo)mi;
+                        string member = pi.Name;
+                        Attribute attrchk = Attribute.GetCustomAttribute(pi,
+                        typeof(XmlRpcMemberAttribute));
+                        if (attrchk != null && attrchk is XmlRpcMemberAttribute)
+                        {
+                            string mmbr = ((XmlRpcMemberAttribute)attrchk).Member;
+                            if (mmbr != "")
+                                member = mmbr;
+                        }
+                        if (pi.GetValue(targetObject) == null)
+                        {
+                            MappingAction memberAction = MemberMappingAction(targetObject.GetType(),
+                              pi.Name, structAction);
+                            if (memberAction == MappingAction.Ignore)
+                                continue;
+                        }
+                        xtw.WriteStartElement("", "member", "");
+                        xtw.WriteElementString("name", member);
+                        Serialize(xtw, pi.GetValue(targetObject, null), mappingAction, nestedObjs);
+                        xtw.WriteEndElement();
+                    }
+                }
+                xtw.WriteEndElement();
+            }
+            else if (xType == XmlRpcType.tVoid)
+                xtw.WriteElementString("string", "");
+            else
+                throw new XmlRpcUnsupportedTypeException(targetObject.GetType());
+            xtw.WriteEndElement();
         }
 
         void BuildArrayXml(
@@ -1214,7 +1215,7 @@ namespace XmlRpc.Client.Serializer
                 }
             }
             return new XmlRpcFaultException(fault.faultCode, fault.faultString);
-        }       
+        }
 
         public void SerializeFaultResponse(
           Stream stm,
