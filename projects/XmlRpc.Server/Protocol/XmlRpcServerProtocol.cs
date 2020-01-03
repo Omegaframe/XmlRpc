@@ -27,7 +27,7 @@ namespace XmlRpc.Server.Protocol
 
         Stream TryInvoke(Stream requestStream)
         {
-            var serializer = new XmlRpcSerializer();
+            var serializer = new XmlRpcRequestDeserializer();
             var serviceAttr = (XmlRpcServiceAttribute)Attribute.GetCustomAttribute(GetType(), typeof(XmlRpcServiceAttribute));
 
             if (serviceAttr != null)

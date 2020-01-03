@@ -24,153 +24,7 @@ namespace XmlRpc.Client.Serializer
 
        
 
-        public XmlRpcRequest DeserializeRequest(Stream stm, Type svcType)
-        {
-            if (stm == null)
-                throw new ArgumentNullException("stm",
-                  "XmlRpcSerializer.DeserializeRequest");
-            XmlDocument xdoc = new XmlDocument();
-            xdoc.PreserveWhitespace = true;
-            try
-            {
-                using (XmlTextReader xmlRdr = new XmlTextReader(stm))
-                {
-                    xmlRdr.DtdProcessing = DtdProcessing.Prohibit;
-                    xdoc.Load(xmlRdr);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new XmlRpcIllFormedXmlException(
-                  "Request from client does not contain valid XML.", ex);
-            }
-            return DeserializeRequest(xdoc, svcType);
-        }
-
-        public XmlRpcRequest DeserializeRequest(TextReader txtrdr, Type svcType)
-        {
-            if (txtrdr == null)
-                throw new ArgumentNullException("txtrdr",
-                  "XmlRpcSerializer.DeserializeRequest");
-            XmlDocument xdoc = new XmlDocument();
-            xdoc.PreserveWhitespace = true;
-            try
-            {
-                using (XmlTextReader xmlRdr = new XmlTextReader(txtrdr))
-                {
-                    xmlRdr.DtdProcessing = DtdProcessing.Prohibit;
-                    xdoc.Load(xmlRdr);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new XmlRpcIllFormedXmlException(
-                  "Request from client does not contain valid XML.", ex);
-            }
-            return DeserializeRequest(xdoc, svcType);
-        }
-
-        public XmlRpcRequest DeserializeRequest(XmlDocument xdoc, Type svcType)
-        {
-            var request = new XmlRpcRequest();
-
-            var callNode = SelectSingleNode(xdoc, "methodCall");
-            if (callNode == null)
-                throw new XmlRpcInvalidXmlRpcException("Request XML not valid XML-RPC - missing methodCall element.");
-
-            var methodNode = SelectSingleNode(callNode, "methodName");
-            if (methodNode?.FirstChild == null)
-                throw new XmlRpcInvalidXmlRpcException("Request XML not valid XML-RPC - missing methodName element.");
-
-            request.method = methodNode.FirstChild.Value;
-            if (request.method == "")
-                throw new XmlRpcInvalidXmlRpcException("Request XML not valid XML-RPC - empty methodName.");
-
-            request.mi = null;
-            var possibleMethods = new MethodInfo[0];
-            var pis = new ParameterInfo[0];
-
-            // retrieve info for the method which handles this XML-RPC method
-            var svcInfo = XmlRpcServiceInfo.CreateServiceInfo(svcType);
-            possibleMethods = svcInfo.GetMethodInfos(request.method);
-
-            // throw if method does not exists
-            if (!possibleMethods.Any())
-                throw new XmlRpcUnsupportedMethodException($"unsupported method called: {request.method}");
-
-            // todo: overloads with parameter types instead of simple count
-            // get overloaded method if any
-            var paramsNode = SelectSingleNode(callNode, "params");
-            var paramNodes = SelectNodes(paramsNode, "param");
-            request.mi = possibleMethods.FirstOrDefault(m => m.GetParameters().Length == paramNodes.Length);
-            if (request.mi == null)
-                throw new XmlRpcInvalidParametersException($"The method {request.method} was called with wrong parameter count");
-
-            // method must be marked with XmlRpcMethod attribute
-            var attr = Attribute.GetCustomAttribute(request.mi, typeof(XmlRpcMethodAttribute));
-            if (attr == null)
-                throw new XmlRpcMethodAttributeException($"Method {request.method} must be marked with the XmlRpcMethod attribute.");
-
-            pis = request.mi.GetParameters();
-            int paramsPos = GetParamsPos(pis);
-
-            ParseStack parseStack = new ParseStack("request");
-            // TODO: use global action setting
-            MappingAction mappingAction = MappingAction.Error;
-            int paramObjCount = (paramsPos == -1 ? paramNodes.Length : paramsPos + 1);
-            object[] paramObjs = new object[paramObjCount];
-            // parse ordinary parameters
-            int ordinaryParams = (paramsPos == -1 ? paramNodes.Length : paramsPos);
-            for (int i = 0; i < ordinaryParams; i++)
-            {
-                XmlNode paramNode = paramNodes[i];
-                XmlNode valueNode = SelectSingleNode(paramNode, "value");
-                if (valueNode == null)
-                    throw new XmlRpcInvalidXmlRpcException("Missing value element.");
-                XmlNode node = SelectValueNode(valueNode);
-                if (svcType != null)
-                {
-                    parseStack.Push(String.Format("parameter {0}", i + 1));
-                    // TODO: why following commented out?
-                    //          parseStack.Push(String.Format("parameter {0} mapped to type {1}", 
-                    //            i, pis[i].ParameterType.Name));
-                    paramObjs[i] = ParseValue(node, pis[i].ParameterType, parseStack,
-                      mappingAction);
-                }
-                else
-                {
-                    parseStack.Push(String.Format("parameter {0}", i));
-                    paramObjs[i] = ParseValue(node, null, parseStack, mappingAction);
-                }
-                parseStack.Pop();
-            }
-            // parse params parameters
-            if (paramsPos != -1)
-            {
-                Type paramsType = pis[paramsPos].ParameterType.GetElementType();
-                object[] args = new object[1];
-                args[0] = paramNodes.Length - paramsPos;
-                Array varargs = (Array)CreateArrayInstance(pis[paramsPos].ParameterType,
-                  args);
-                for (int i = 0; i < varargs.Length; i++)
-                {
-                    XmlNode paramNode = paramNodes[i + paramsPos];
-                    XmlNode valueNode = SelectSingleNode(paramNode, "value");
-                    if (valueNode == null)
-                        throw new XmlRpcInvalidXmlRpcException("Missing value element.");
-                    XmlNode node = SelectValueNode(valueNode);
-                    parseStack.Push(String.Format("parameter {0}", i + 1 + paramsPos));
-                    varargs.SetValue(ParseValue(node, paramsType, parseStack,
-                      mappingAction), i);
-                    parseStack.Pop();
-                }
-                paramObjs[paramsPos] = varargs;
-            }
-            request.args = paramObjs;
-            return request;
-        }
-
-        int GetParamsPos(ParameterInfo[] pis)
+        protected int GetParamsPos(ParameterInfo[] pis)
         {
             if (pis.Length == 0)
                 return -1;
@@ -583,7 +437,7 @@ namespace XmlRpc.Client.Serializer
             xtw.WriteEndElement();
         }
 
-        object ParseValue(
+        protected object ParseValue(
           XmlNode node,
           Type ValueType,
           ParseStack parseStack,
@@ -1592,12 +1446,12 @@ namespace XmlRpc.Client.Serializer
             return sb.ToString();
         }
 
-        XmlNode SelectSingleNode(XmlNode node, string name)
+        protected XmlNode SelectSingleNode(XmlNode node, string name)
         {
             return node.SelectSingleNode(name);
         }
 
-        XmlNode[] SelectNodes(XmlNode node, string name)
+        protected XmlNode[] SelectNodes(XmlNode node, string name)
         {
             ArrayList list = new ArrayList();
             foreach (XmlNode selnode in node.ChildNodes)
@@ -1608,7 +1462,7 @@ namespace XmlRpc.Client.Serializer
             return (XmlNode[])list.ToArray(typeof(XmlNode));
         }
 
-        XmlNode SelectValueNode(XmlNode valueNode)
+        protected XmlNode SelectValueNode(XmlNode valueNode)
         {
             // an XML-RPC value is either held as the child node of a <value> element
             // or is just the text of the value node as an implicit string value
@@ -1643,7 +1497,7 @@ namespace XmlRpc.Client.Serializer
         }
 
         // TODO: following to return Array?
-        object CreateArrayInstance(Type type, object[] args)
+       protected object CreateArrayInstance(Type type, object[] args)
         {
             return Activator.CreateInstance(type, args);
         }
