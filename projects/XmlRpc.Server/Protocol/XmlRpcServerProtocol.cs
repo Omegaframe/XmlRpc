@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using XmlRpc.Client;
 using XmlRpc.Client.Attributes;
 using XmlRpc.Client.DataTypes;
 using XmlRpc.Client.Exceptions;
 using XmlRpc.Client.Model;
+using XmlRpc.Client.Serializer;
 
 namespace XmlRpc.Server.Protocol
 {
@@ -56,12 +56,12 @@ namespace XmlRpc.Server.Protocol
         void SetSerializerSettings(XmlRpcServiceAttribute serviceAttr, XmlRpcSerializer serializer)
         {
             if (serviceAttr.XmlEncoding != null)
-                serializer.XmlEncoding = Encoding.GetEncoding(serviceAttr.XmlEncoding);
+                serializer.Configuration.XmlEncoding = Encoding.GetEncoding(serviceAttr.XmlEncoding);
 
-            serializer.UseIntTag = serviceAttr.UseIntTag;
-            serializer.UseStringTag = serviceAttr.UseStringTag;
-            serializer.UseIndentation = serviceAttr.UseIndentation;
-            serializer.Indentation = serviceAttr.Indentation;
+            serializer.Configuration.UseIntTag = serviceAttr.UseIntTag;
+            serializer.Configuration.UseStringTag = serviceAttr.UseStringTag;
+            serializer.Configuration.UseIndentation = serviceAttr.UseIndentation;
+            serializer.Configuration.Indentation = serviceAttr.Indentation;
         }
 
         Stream CreateExceptionResponse(Exception exception)

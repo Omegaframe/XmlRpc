@@ -9,6 +9,7 @@ using System.Text;
 using XmlRpc.Client.Attributes;
 using XmlRpc.Client.Exceptions;
 using XmlRpc.Client.Model;
+using XmlRpc.Client.Serializer;
 
 namespace XmlRpc.Client
 {
@@ -74,15 +75,15 @@ namespace XmlRpc.Client
                     serStream = new MemoryStream(2000);
                 try
                 {
-                    var serializer = new XmlRpcSerializer();
+                    var serializer = new XmlRpcRequestSerializer();
                     if (XmlEncoding != null)
-                        serializer.XmlEncoding = XmlEncoding;
-                    serializer.UseIndentation = UseIndentation;
-                    serializer.Indentation = Indentation;
-                    serializer.NonStandard = NonStandard;
-                    serializer.UseStringTag = UseStringTag;
-                    serializer.UseIntTag = UseIntTag;
-                    serializer.UseEmptyParamsTag = UseEmptyParamsTag;
+                        serializer.Configuration.XmlEncoding = XmlEncoding;
+                    serializer.Configuration.UseIndentation = UseIndentation;
+                    serializer.Configuration.Indentation = Indentation;
+                    serializer.Configuration.NonStandard = NonStandard;
+                    serializer.Configuration.UseStringTag = UseStringTag;
+                    serializer.Configuration.UseIntTag = UseIntTag;
+                    serializer.Configuration.UseEmptyParamsTag = UseEmptyParamsTag;
                     serializer.SerializeRequest(serStream, req);
                     if (logging)
                     {
@@ -280,7 +281,7 @@ namespace XmlRpc.Client
                     throw new XmlRpcServerException(httpResp.StatusDescription);
             }
             var serializer = new XmlRpcSerializer();
-            serializer.NonStandard = NonStandard;
+            serializer.Configuration.NonStandard = NonStandard;
             var retType = returnType;
             if (retType == null)
                 retType = req.mi.ReturnType;
@@ -428,14 +429,14 @@ namespace XmlRpc.Client
                 try
                 {
                     var req = clientResult.XmlRpcRequest;
-                    var serializer = new XmlRpcSerializer();
+                    var serializer = new XmlRpcRequestSerializer();
                     if (clientResult.XmlEncoding != null)
-                        serializer.XmlEncoding = clientResult.XmlEncoding;
-                    serializer.UseEmptyParamsTag = clientResult.UseEmptyParamsTag;
-                    serializer.UseIndentation = clientResult.UseIndentation;
-                    serializer.Indentation = clientResult.Indentation;
-                    serializer.UseIntTag = clientResult.UseIntTag;
-                    serializer.UseStringTag = clientResult.UseStringTag;
+                        serializer.Configuration.XmlEncoding = clientResult.XmlEncoding;
+                    serializer.Configuration.UseEmptyParamsTag = clientResult.UseEmptyParamsTag;
+                    serializer.Configuration.UseIndentation = clientResult.UseIndentation;
+                    serializer.Configuration.Indentation = clientResult.Indentation;
+                    serializer.Configuration.UseIntTag = clientResult.UseIntTag;
+                    serializer.Configuration.UseStringTag = clientResult.UseStringTag;
                     serializer.SerializeRequest(serStream, req);
                     if (logging)
                     {

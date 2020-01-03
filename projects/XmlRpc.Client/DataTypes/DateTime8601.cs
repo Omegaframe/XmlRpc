@@ -13,12 +13,12 @@ namespace XmlRpc.Client.DataTypes
           + @"(?<tz>$|Z|([+-]\d{2}:?(\d{2})?))");
 
         static readonly string[] Formats = new[]
-            {
-                "yyyyMMdd'T'HHmmss",
-                "yyyyMMdd'T'HHmmss'Z'",
-                "yyyyMMdd'T'HHmmsszzz",
-                "yyyyMMdd'T'HHmmsszz",
-            };
+        {
+            "yyyyMMdd'T'HHmmss",
+            "yyyyMMdd'T'HHmmss'Z'",
+            "yyyyMMdd'T'HHmmsszzz",
+            "yyyyMMdd'T'HHmmsszz",
+        };
 
         static public bool TryParseDateTime8601(string date, out DateTime result)
         {

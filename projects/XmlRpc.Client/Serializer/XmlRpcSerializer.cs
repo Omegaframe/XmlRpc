@@ -11,202 +11,18 @@ using XmlRpc.Client.DataTypes;
 using XmlRpc.Client.Exceptions;
 using XmlRpc.Client.Model;
 
-namespace XmlRpc.Client
+namespace XmlRpc.Client.Serializer
 {
-    class Fault
-    {
-        public int faultCode;
-        public string faultString;
-    }
-
     public class XmlRpcSerializer
     {
-        public int Indentation
-        {
-            get { return m_indentation; }
-            set { m_indentation = value; }
-        }
-        int m_indentation = 2;
+        public SerializerConfig Configuration { get; }
 
-        public XmlRpcNonStandard NonStandard
+        public XmlRpcSerializer()
         {
-            get { return m_nonStandard; }
-            set { m_nonStandard = value; }
-        }
-        XmlRpcNonStandard m_nonStandard = XmlRpcNonStandard.None;
-
-        public bool UseEmptyParamsTag
-        {
-            get { return m_bUseEmptyParamsTag; }
-            set { m_bUseEmptyParamsTag = value; }
-        }
-        bool m_bUseEmptyParamsTag = true;
-
-        public bool UseIndentation
-        {
-            get { return m_bUseIndentation; }
-            set { m_bUseIndentation = value; }
-        }
-        bool m_bUseIndentation = true;
-
-        public bool UseIntTag
-        {
-            get { return m_useIntTag; }
-            set { m_useIntTag = value; }
-        }
-        bool m_useIntTag;
-
-        public bool UseStringTag
-        {
-            get { return m_useStringTag; }
-            set { m_useStringTag = value; }
-        }
-        bool m_useStringTag = true;
-
-        public Encoding XmlEncoding
-        {
-            get { return m_encoding; }
-            set { m_encoding = value; }
-        }
-        Encoding m_encoding = null;
-
-        // properties
-        bool AllowInvalidHTTPContent
-        {
-            get { return (m_nonStandard & XmlRpcNonStandard.AllowInvalidHTTPContent) != 0; }
+            Configuration = new SerializerConfig();
         }
 
-        bool AllowStringFaultCode
-        {
-            get { return (m_nonStandard & XmlRpcNonStandard.AllowStringFaultCode) != 0; }
-        }
-
-        bool IgnoreDuplicateMembers
-        {
-            get { return (m_nonStandard & XmlRpcNonStandard.IgnoreDuplicateMembers) != 0; }
-        }
-
-        bool MapEmptyDateTimeToMinValue
-        {
-            get { return (m_nonStandard & XmlRpcNonStandard.MapEmptyDateTimeToMinValue) != 0; }
-        }
-
-        bool MapZerosDateTimeToMinValue
-        {
-            get { return (m_nonStandard & XmlRpcNonStandard.MapZerosDateTimeToMinValue) != 0; }
-        }
-
-        public void SerializeRequest(Stream stm, XmlRpcRequest request)
-        {
-            XmlTextWriter xtw = new XmlTextWriter(stm, m_encoding);
-            ConfigureXmlFormat(xtw);
-            xtw.WriteStartDocument();
-            xtw.WriteStartElement("", "methodCall", "");
-            {
-                // TODO: use global action setting
-                MappingAction mappingAction = MappingAction.Error;
-                if (request.xmlRpcMethod == null)
-                    xtw.WriteElementString("methodName", request.method);
-                else
-                    xtw.WriteElementString("methodName", request.xmlRpcMethod);
-                if (request.args.Length > 0 || UseEmptyParamsTag)
-                {
-                    xtw.WriteStartElement("", "params", "");
-                    try
-                    {
-                        if (!IsStructParamsMethod(request.mi))
-                            SerializeParams(xtw, request, mappingAction);
-                        else
-                            SerializeStructParams(xtw, request, mappingAction);
-                    }
-                    catch (XmlRpcUnsupportedTypeException ex)
-                    {
-                        throw new XmlRpcUnsupportedTypeException(ex.UnsupportedType,
-                          String.Format("A parameter is of, or contains an instance of, "
-                          + "type {0} which cannot be mapped to an XML-RPC type",
-                          ex.UnsupportedType));
-                    }
-                    xtw.WriteEndElement();
-                }
-            }
-            xtw.WriteEndElement();
-            xtw.Flush();
-        }
-
-        void SerializeParams(XmlTextWriter xtw, XmlRpcRequest request,
-          MappingAction mappingAction)
-        {
-            ParameterInfo[] pis = null;
-            if (request.mi != null)
-            {
-                pis = request.mi.GetParameters();
-            }
-            for (int i = 0; i < request.args.Length; i++)
-            {
-                if (pis != null)
-                {
-                    if (i >= pis.Length)
-                        throw new XmlRpcInvalidParametersException("Number of request "
-                          + "parameters greater than number of proxy method parameters.");
-                    if (i == pis.Length - 1
-                      && Attribute.IsDefined(pis[i], typeof(ParamArrayAttribute)))
-                    {
-                        Array ary = (Array)request.args[i];
-                        foreach (object o in ary)
-                        {
-                            if (o == null)
-                                throw new XmlRpcNullParameterException(
-                                  "Null parameter in params array");
-                            xtw.WriteStartElement("", "param", "");
-                            Serialize(xtw, o, mappingAction);
-                            xtw.WriteEndElement();
-                        }
-                        break;
-                    }
-                }
-                if (request.args[i] == null)
-                {
-                    throw new XmlRpcNullParameterException(String.Format(
-                      "Null method parameter #{0}", i + 1));
-                }
-                xtw.WriteStartElement("", "param", "");
-                Serialize(xtw, request.args[i], mappingAction);
-                xtw.WriteEndElement();
-            }
-        }
-
-        void SerializeStructParams(XmlTextWriter xtw, XmlRpcRequest request,
-          MappingAction mappingAction)
-        {
-            ParameterInfo[] pis = request.mi.GetParameters();
-            if (request.args.Length > pis.Length)
-                throw new XmlRpcInvalidParametersException("Number of request "
-                  + "parameters greater than number of proxy method parameters.");
-            if (Attribute.IsDefined(pis[request.args.Length - 1],
-              typeof(ParamArrayAttribute)))
-            {
-                throw new XmlRpcInvalidParametersException("params parameter cannot "
-                  + "be used with StructParams.");
-            }
-            xtw.WriteStartElement("", "param", "");
-            xtw.WriteStartElement("", "value", "");
-            xtw.WriteStartElement("", "struct", "");
-            for (int i = 0; i < request.args.Length; i++)
-            {
-                if (request.args[i] == null)
-                {
-                    throw new XmlRpcNullParameterException(String.Format(
-                      "Null method parameter #{0}", i + 1));
-                }
-                xtw.WriteStartElement("", "member", "");
-                xtw.WriteElementString("name", pis[i].Name);
-                Serialize(xtw, request.args[i], mappingAction);
-                xtw.WriteEndElement();
-            }
-            xtw.WriteEndElement();
-            xtw.WriteEndElement();
-            xtw.WriteEndElement();
-        }
+       
 
         public XmlRpcRequest DeserializeRequest(Stream stm, Type svcType)
         {
@@ -375,8 +191,8 @@ namespace XmlRpc.Client
                 return;
             }
 
-            XmlTextWriter xtw = new XmlTextWriter(stm, m_encoding);
-            ConfigureXmlFormat(xtw);
+            XmlTextWriter xtw = new XmlTextWriter(stm, Configuration.XmlEncoding);
+            Configuration.ConfigureXmlFormat(xtw);
             xtw.WriteStartDocument();
             xtw.WriteStartElement("", "methodResponse", "");
             xtw.WriteStartElement("", "params", "");
@@ -413,7 +229,7 @@ namespace XmlRpc.Client
             if (stm == null)
                 throw new ArgumentNullException("stm",
                   "XmlRpcSerializer.DeserializeResponse");
-            if (AllowInvalidHTTPContent)
+            if (Configuration.AllowInvalidHTTPContent())
             {
                 Stream newStm = new MemoryStream();
                 stm.CopyTo(newStm);
@@ -639,7 +455,7 @@ namespace XmlRpc.Client
                 }
                 else if (xType == XmlRpcType.tInt32)
                 {
-                    if (UseIntTag)
+                    if (Configuration.UseIntTag)
                         xtw.WriteElementString("int", o.ToString());
                     else
                         xtw.WriteElementString("i4", o.ToString());
@@ -650,7 +466,7 @@ namespace XmlRpc.Client
                 }
                 else if (xType == XmlRpcType.tString)
                 {
-                    if (UseStringTag)
+                    if (Configuration.UseStringTag)
                         xtw.WriteElementString("string", (string)o);
                     else
                         xtw.WriteString((string)o);
@@ -1153,7 +969,7 @@ namespace XmlRpc.Client
                           + "member onto member marked as [NonSerialized]: "
                           + " " + StackDump(parseStack));
                     }
-                    if (!IgnoreDuplicateMembers)
+                    if (!Configuration.IgnoreDuplicateMembers())
                         throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
                           + " contains class value with duplicate member "
                           + nameNode.FirstChild.Value
@@ -1357,7 +1173,7 @@ namespace XmlRpc.Client
                           + " " + StackDump(parseStack));
                     if (retObj.Contains(rpcName))
                     {
-                        if (!IgnoreDuplicateMembers)
+                        if (!Configuration.IgnoreDuplicateMembers())
                             throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
                               + " contains class value with duplicate member "
                               + nameNode.FirstChild.Value
@@ -1610,7 +1426,7 @@ namespace XmlRpc.Client
                 XmlNode child = node.FirstChild;
                 if (child == null)
                 {
-                    if (MapEmptyDateTimeToMinValue)
+                    if (Configuration.MapEmptyDateTimeToMinValue())
                         return DateTime.MinValue;
                     else
                         throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
@@ -1625,7 +1441,7 @@ namespace XmlRpc.Client
                 //   other yyyy-MM-ddThh:mm:ss
                 if (!DateTime8601.TryParseDateTime8601(s, out retVal))
                 {
-                    if (MapZerosDateTimeToMinValue && s.StartsWith("0000")
+                    if (Configuration.MapZerosDateTimeToMinValue() && s.StartsWith("0000")
                       && (s == "00000000T00:00:00" || s == "0000-00-00T00:00:00Z"
                       || s == "00000000T00:00:00Z" || s == "0000-00-00T00:00:00"))
                         retVal = DateTime.MinValue;
@@ -1698,16 +1514,16 @@ namespace XmlRpc.Client
                 throw new XmlRpcInvalidXmlRpcException(
                   "class element missing from fault response.");
             }
-            var fault = new Fault(); ;
+            var fault = new XmlFault(); ;
             try
             {
-                fault = (Fault)ParseValue(structNode, typeof(Fault), parseStack,
+                fault = (XmlFault)ParseValue(structNode, typeof(XmlFault), parseStack,
                   mappingAction);
             }
             catch (Exception ex)
             {
                 // some servers incorrectly return fault code in a string
-                if (AllowStringFaultCode)
+                if (Configuration.AllowStringFaultCode())
                     throw;
                 else
                 {
@@ -1751,8 +1567,8 @@ namespace XmlRpc.Client
                 faultString = faultEx.FaultString
             };
 
-            XmlTextWriter xtw = new XmlTextWriter(stm, m_encoding);
-            ConfigureXmlFormat(xtw);
+            XmlTextWriter xtw = new XmlTextWriter(stm, Configuration.XmlEncoding);
+            Configuration.ConfigureXmlFormat(xtw);
             xtw.WriteStartDocument();
             xtw.WriteStartElement("", "methodResponse", "");
             xtw.WriteStartElement("", "fault", "");
@@ -1760,20 +1576,6 @@ namespace XmlRpc.Client
             xtw.WriteEndElement();
             xtw.WriteEndElement();
             xtw.Flush();
-        }
-
-        void ConfigureXmlFormat(
-          XmlTextWriter xtw)
-        {
-            if (m_bUseIndentation)
-            {
-                xtw.Formatting = Formatting.Indented;
-                xtw.Indentation = m_indentation;
-            }
-            else
-            {
-                xtw.Formatting = Formatting.None;
-            }
         }
 
         string StackDump(ParseStack parseStack)
@@ -1846,20 +1648,7 @@ namespace XmlRpc.Client
             return Activator.CreateInstance(type, args);
         }
 
-        bool IsStructParamsMethod(MethodInfo mi)
-        {
-            if (mi == null)
-                return false;
-            bool ret = false;
-            Attribute attr = Attribute.GetCustomAttribute(mi,
-              typeof(XmlRpcMethodAttribute));
-            if (attr != null)
-            {
-                XmlRpcMethodAttribute mattr = (XmlRpcMethodAttribute)attr;
-                ret = mattr.StructParams;
-            }
-            return ret;
-        }
+      
 
 
         public
