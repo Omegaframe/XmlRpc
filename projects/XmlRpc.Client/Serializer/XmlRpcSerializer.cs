@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Xml;
@@ -21,187 +20,6 @@ namespace XmlRpc.Client.Serializer
         {
             Configuration = new SerializerConfig();
         }
-
-        protected int GetParamsPos(ParameterInfo[] pis)
-        {
-            if (pis.Length == 0)
-                return -1;
-
-            if (Attribute.IsDefined(pis[^1], typeof(ParamArrayAttribute)))
-            {
-                return pis.Length - 1;
-            }
-
-            return -1;
-        }
-
-        public void SerializeResponse(Stream stm, XmlRpcResponse response)
-        {
-            object ret = response.retVal;
-            if (ret is XmlRpcFaultException)
-            {
-                SerializeFaultResponse(stm, (XmlRpcFaultException)ret);
-                return;
-            }
-
-            XmlTextWriter xtw = new XmlTextWriter(stm, Configuration.XmlEncoding);
-            Configuration.ConfigureXmlFormat(xtw);
-            xtw.WriteStartDocument();
-            xtw.WriteStartElement("", "methodResponse", "");
-            xtw.WriteStartElement("", "params", "");
-            xtw.WriteStartElement("", "param", "");
-            // "void" methods actually return an empty value
-            if (ret != null)
-            {
-                // TODO: use global action setting
-                MappingAction mappingAction = MappingAction.Error;
-                try
-                {
-                    Serialize(xtw, ret, mappingAction);
-                }
-                catch (XmlRpcUnsupportedTypeException ex)
-                {
-                    throw new XmlRpcInvalidReturnType(string.Format(
-                      "Return value is of, or contains an instance of, type {0} which "
-                      + "cannot be mapped to an XML-RPC type", ex.UnsupportedType));
-                }
-            }
-            else
-            {
-                xtw.WriteStartElement("", "value", "");
-                xtw.WriteEndElement();
-            }
-            xtw.WriteEndElement();
-            xtw.WriteEndElement();
-            xtw.WriteEndElement();
-            xtw.Flush();
-        }
-
-        public XmlRpcResponse DeserializeResponse(Stream stm, Type svcType)
-        {
-            if (stm == null)
-                throw new ArgumentNullException("stm",
-                  "XmlRpcSerializer.DeserializeResponse");
-            if (Configuration.AllowInvalidHTTPContent())
-            {
-                Stream newStm = new MemoryStream();
-                stm.CopyTo(newStm);
-                stm = newStm;
-                stm.Position = 0;
-                while (true)
-                {
-                    // for now just strip off any leading CR-LF characters
-                    int byt = stm.ReadByte();
-                    if (byt == -1)
-                        throw new XmlRpcIllFormedXmlException(
-                          "Response from server does not contain valid XML.");
-                    if (byt != 0x0d && byt != 0x0a && byt != ' ' && byt != '\t')
-                    {
-                        stm.Position -= 1;
-                        break;
-                    }
-                }
-            }
-            XmlDocument xdoc = new XmlDocument();
-            xdoc.PreserveWhitespace = true;
-            try
-            {
-                using (XmlTextReader xmlRdr = new XmlTextReader(stm))
-                {
-                    xdoc.Load(xmlRdr);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new XmlRpcIllFormedXmlException(
-                  "Response from server does not contain valid XML.", ex);
-            }
-            return DeserializeResponse(xdoc, svcType);
-        }
-
-        public XmlRpcResponse DeserializeResponse(TextReader txtrdr, Type svcType)
-        {
-            if (txtrdr == null)
-                throw new ArgumentNullException("txtrdr",
-                  "XmlRpcSerializer.DeserializeResponse");
-            XmlDocument xdoc = new XmlDocument();
-            xdoc.PreserveWhitespace = true;
-            try
-            {
-                using (XmlTextReader xmlRdr = new XmlTextReader(txtrdr))
-                {
-                    xdoc.Load(xmlRdr);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new XmlRpcIllFormedXmlException(
-                  "Response from server does not contain valid XML.", ex);
-            }
-            return DeserializeResponse(xdoc, svcType);
-        }
-
-        public XmlRpcResponse DeserializeResponse(XmlDocument xdoc, Type returnType)
-        {
-            XmlRpcResponse response = new XmlRpcResponse();
-            XmlNode methodResponseNode = SelectSingleNode(xdoc, "methodResponse");
-            if (methodResponseNode == null)
-            {
-                throw new XmlRpcInvalidXmlRpcException(
-                  "Response XML not valid XML-RPC - missing methodResponse element.");
-            }
-            // check for fault response
-            XmlNode faultNode = SelectSingleNode(methodResponseNode, "fault");
-            if (faultNode != null)
-            {
-                ParseStack parseStack = new ParseStack("fault response");
-                // TODO: use global action setting
-                MappingAction mappingAction = MappingAction.Error;
-                XmlRpcFaultException faultEx = ParseFault(faultNode, parseStack,
-                  mappingAction);
-                throw faultEx;
-            }
-            XmlNode paramsNode = SelectSingleNode(methodResponseNode, "params");
-            if (paramsNode == null && returnType != null)
-            {
-                if (returnType == typeof(void))
-                    return new XmlRpcResponse(null);
-                else
-                    throw new XmlRpcInvalidXmlRpcException(
-                      "Response XML not valid XML-RPC - missing params element.");
-            }
-            XmlNode paramNode = SelectSingleNode(paramsNode, "param");
-            if (paramNode == null && returnType != null)
-            {
-                if (returnType == typeof(void))
-                    return new XmlRpcResponse(null);
-                else
-                    throw new XmlRpcInvalidXmlRpcException(
-                      "Response XML not valid XML-RPC - missing params element.");
-            }
-            XmlNode valueNode = SelectSingleNode(paramNode, "value");
-            if (valueNode == null)
-            {
-                throw new XmlRpcInvalidXmlRpcException(
-                  "Response XML not valid XML-RPC - missing value element.");
-            }
-            object retObj;
-            if (returnType == typeof(void))
-            {
-                retObj = null;
-            }
-            else
-            {
-                ParseStack parseStack = new ParseStack("response");
-                // TODO: use global action setting
-                MappingAction mappingAction = MappingAction.Error;
-                XmlNode node = SelectValueNode(valueNode);
-                retObj = ParseValue(node, returnType, parseStack, mappingAction);
-            }
-            response.retVal = retObj;
-            return response;
-        }
-
 
         public
 
@@ -1355,7 +1173,7 @@ namespace XmlRpc.Client.Serializer
             return ret;
         }
 
-        XmlRpcFaultException ParseFault(
+        protected XmlRpcFaultException ParseFault(
           XmlNode faultNode,
           ParseStack parseStack,
           MappingAction mappingAction)
@@ -1396,19 +1214,7 @@ namespace XmlRpc.Client.Serializer
                 }
             }
             return new XmlRpcFaultException(fault.faultCode, fault.faultString);
-        }
-
-        class FaultStruct
-        {
-            public int faultCode;
-            public string faultString;
-        }
-
-        class FaultStructStringCode
-        {
-            public string faultCode { get; set; }
-            public string faultString { get; set; }
-        }
+        }       
 
         public void SerializeFaultResponse(
           Stream stm,
@@ -1500,25 +1306,5 @@ namespace XmlRpc.Client.Serializer
         {
             return Activator.CreateInstance(type, args);
         }
-
-
-
-
-        public
-        class ParseStack : Stack
-        {
-            public ParseStack(string parseType)
-            {
-                m_parseType = parseType;
-            }
-
-            public string ParseType
-            {
-                get { return m_parseType; }
-            }
-
-            public string m_parseType = "";
-        }
     }
-
 }

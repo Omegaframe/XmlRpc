@@ -110,5 +110,16 @@ namespace XmlRpc.Client.Serializer
             request.args = paramObjs;
             return request;
         }
+
+        int GetParamsPos(ParameterInfo[] pis)
+        {
+            if (pis.Length == 0)
+                return -1;
+
+            if (Attribute.IsDefined(pis[^1], typeof(ParamArrayAttribute)))            
+                return pis.Length - 1;            
+
+            return -1;
+        }
     }
 }

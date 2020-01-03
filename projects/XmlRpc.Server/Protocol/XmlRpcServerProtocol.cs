@@ -27,13 +27,13 @@ namespace XmlRpc.Server.Protocol
 
         Stream TryInvoke(Stream requestStream)
         {
-            var serializer = new XmlRpcRequestDeserializer();
+            var deserializer = new XmlRpcRequestDeserializer();
             var serviceAttr = (XmlRpcServiceAttribute)Attribute.GetCustomAttribute(GetType(), typeof(XmlRpcServiceAttribute));
 
             if (serviceAttr != null)
-                SetSerializerSettings(serviceAttr, serializer);
+                SetSerializerSettings(serviceAttr, deserializer);
 
-            var xmlRpcReq = serializer.DeserializeRequest(requestStream, GetType());
+            var xmlRpcReq = deserializer.DeserializeRequest(requestStream, GetType());
 
             XmlRpcResponse xmlRpcResp = null;
             if (xmlRpcReq.method.Equals("system.multicall", StringComparison.OrdinalIgnoreCase))
@@ -48,6 +48,7 @@ namespace XmlRpc.Server.Protocol
             }
 
             var responseStream = new MemoryStream();
+            var serializer = new XmlRpcResponseSerializer();
             serializer.SerializeResponse(responseStream, xmlRpcResp);
             responseStream.Seek(0, SeekOrigin.Begin);
             return responseStream;

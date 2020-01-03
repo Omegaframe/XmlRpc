@@ -280,7 +280,7 @@ namespace XmlRpc.Client
                 else
                     throw new XmlRpcServerException(httpResp.StatusDescription);
             }
-            var serializer = new XmlRpcSerializer();
+            var serializer = new XmlRpcResponseDeserializer();
             serializer.Configuration.NonStandard = NonStandard;
             var retType = returnType;
             if (retType == null)
