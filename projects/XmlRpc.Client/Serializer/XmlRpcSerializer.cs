@@ -22,18 +22,17 @@ namespace XmlRpc.Client.Serializer
             Configuration = new SerializerConfig();
         }
 
-       
-
         protected int GetParamsPos(ParameterInfo[] pis)
         {
             if (pis.Length == 0)
                 return -1;
+
             if (Attribute.IsDefined(pis[^1], typeof(ParamArrayAttribute)))
             {
                 return pis.Length - 1;
             }
-            else
-                return -1;
+
+            return -1;
         }
 
         public void SerializeResponse(Stream stm, XmlRpcResponse response)
@@ -1497,12 +1496,12 @@ namespace XmlRpc.Client.Serializer
         }
 
         // TODO: following to return Array?
-       protected object CreateArrayInstance(Type type, object[] args)
+        protected object CreateArrayInstance(Type type, object[] args)
         {
             return Activator.CreateInstance(type, args);
         }
 
-      
+
 
 
         public

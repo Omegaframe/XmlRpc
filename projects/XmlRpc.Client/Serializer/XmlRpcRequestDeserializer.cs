@@ -20,7 +20,7 @@ namespace XmlRpc.Client.Serializer
             return DeserializeRequest(xdoc, svcType);
         }
 
-        public XmlRpcRequest DeserializeRequest(XmlDocument xdoc, Type svcType)
+        XmlRpcRequest DeserializeRequest(XmlDocument xdoc, Type svcType)
         {
             var request = new XmlRpcRequest();
 

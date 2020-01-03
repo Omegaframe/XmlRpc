@@ -5,7 +5,7 @@ using XmlRpc.Client.Exceptions;
 
 namespace XmlRpc.Client.Serializer
 {
-    class XmlDocumentLoader
+    static class XmlDocumentLoader
     {
         public static XmlDocument LoadXmlDocument(Stream inputStream)
         {
