@@ -22,20 +22,21 @@ namespace XmlRpc.Client.Serializer
 
         public XmlRpcResponse DeserializeResponse(XmlDocument xdoc, Type returnType)
         {
+            var parser = new XmlParser(Configuration);
             var response = new XmlRpcResponse();
-            var methodResponseNode = SelectSingleNode(xdoc, "methodResponse");
+            var methodResponseNode = xdoc.SelectSingleNode("methodResponse");
             if (methodResponseNode == null)
                 throw new XmlRpcInvalidXmlRpcException("Response XML not valid XML-RPC - missing methodResponse element.");
 
-            var faultNode = SelectSingleNode(methodResponseNode, "fault");
+            var faultNode = methodResponseNode.SelectSingleNode("fault");
             if (faultNode != null)
             {
                 var parseStack = new ParseStack("fault response");
-                var faultEx = ParseFault(faultNode, parseStack, Configuration.MappingAction);
+                var faultEx = parser.ParseFault(faultNode, parseStack);
                 throw faultEx;
             }
 
-            var paramsNode = SelectSingleNode(methodResponseNode, "params");
+            var paramsNode = methodResponseNode.SelectSingleNode("params");
             if (paramsNode == null && returnType != null)
             {
                 if (returnType == typeof(void))
@@ -44,7 +45,7 @@ namespace XmlRpc.Client.Serializer
                     throw new XmlRpcInvalidXmlRpcException("Response XML not valid XML-RPC - missing params element.");
             }
 
-            var paramNode = SelectSingleNode(paramsNode, "param");
+            var paramNode = paramsNode.SelectSingleNode("param");
             if (paramNode == null && returnType != null)
             {
                 if (returnType == typeof(void))
@@ -53,16 +54,16 @@ namespace XmlRpc.Client.Serializer
                     throw new XmlRpcInvalidXmlRpcException("Response XML not valid XML-RPC - missing params element.");
             }
 
-            var valueNode = SelectSingleNode(paramNode, "value");
-            if (valueNode == null)            
+            var valueNode = paramNode.SelectSingleNode("value");
+            if (valueNode == null)
                 throw new XmlRpcInvalidXmlRpcException("Response XML not valid XML-RPC - missing value element.");
 
             response.retVal = null;
-            if (returnType != typeof(void))          
+            if (returnType != typeof(void))
             {
-                var parseStack = new ParseStack("response");                
-                var node = SelectValueNode(valueNode);
-                response.retVal = ParseValue(node, returnType, parseStack, Configuration.MappingAction);
+                var parseStack = new ParseStack("response");
+                var node = valueNode.SelectValueNode();
+                response.retVal = parser.ParseValue(node, returnType, parseStack);
             }
 
             return response;
