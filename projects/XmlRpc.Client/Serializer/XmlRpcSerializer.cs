@@ -191,63 +191,67 @@ namespace XmlRpc.Client.Serializer
                     }
                     else if (mi.MemberType == MemberTypes.Property)
                     {
-                        PropertyInfo pi = (PropertyInfo)mi;
-                        string member = pi.Name;
-                        Attribute attrchk = Attribute.GetCustomAttribute(pi,
-                        typeof(XmlRpcMemberAttribute));
+                        var pi = (PropertyInfo)mi;
+                        var member = pi.Name;
+                        var attrchk = Attribute.GetCustomAttribute(pi, typeof(XmlRpcMemberAttribute));
+
                         if (attrchk != null && attrchk is XmlRpcMemberAttribute)
                         {
-                            string mmbr = ((XmlRpcMemberAttribute)attrchk).Member;
+                            var mmbr = ((XmlRpcMemberAttribute)attrchk).Member;
                             if (mmbr != "")
                                 member = mmbr;
                         }
+
                         if (pi.GetValue(targetObject) == null)
                         {
-                            MappingAction memberAction = MemberMappingAction(targetObject.GetType(),
-                              pi.Name, structAction);
+                            var memberAction = MemberMappingAction(targetObject.GetType(), pi.Name, structAction);
                             if (memberAction == MappingAction.Ignore)
                                 continue;
                         }
+
                         xtw.WriteStartElement("", "member", "");
                         xtw.WriteElementString("name", member);
+
                         Serialize(xtw, pi.GetValue(targetObject, null), mappingAction, nestedObjs);
+
                         xtw.WriteEndElement();
                     }
                 }
+
                 xtw.WriteEndElement();
             }
             else if (xType == XmlRpcType.tVoid)
+            {
                 xtw.WriteElementString("string", "");
+            }
             else
+            {
                 throw new XmlRpcUnsupportedTypeException(targetObject.GetType());
+            }
+
             xtw.WriteEndElement();
         }
 
-        void BuildArrayXml(
-          XmlTextWriter xtw,
-          Array ary,
-          int CurRank,
-          int[] indices,
-          MappingAction mappingAction,
-          ArrayList nestedObjs)
+        void BuildArrayXml(XmlTextWriter xtw, Array ary, int curRank, int[] indices, MappingAction mappingAction, ArrayList nestedObjs)
         {
             xtw.WriteStartElement("", "array", "");
             xtw.WriteStartElement("", "data", "");
-            if (CurRank < (ary.Rank - 1))
+
+            if (curRank < (ary.Rank - 1))
             {
-                for (int i = 0; i < ary.GetLength(CurRank); i++)
+                for (int i = 0; i < ary.GetLength(curRank); i++)
                 {
-                    indices[CurRank] = i;
+                    indices[curRank] = i;
                     xtw.WriteStartElement("", "value", "");
-                    BuildArrayXml(xtw, ary, CurRank + 1, indices, mappingAction, nestedObjs);
+                    BuildArrayXml(xtw, ary, curRank + 1, indices, mappingAction, nestedObjs);
                     xtw.WriteEndElement();
                 }
             }
             else
             {
-                for (int i = 0; i < ary.GetLength(CurRank); i++)
+                for (int i = 0; i < ary.GetLength(curRank); i++)
                 {
-                    indices[CurRank] = i;
+                    indices[curRank] = i;
                     Serialize(xtw, ary.GetValue(indices), mappingAction, nestedObjs);
                 }
             }
@@ -255,25 +259,15 @@ namespace XmlRpc.Client.Serializer
             xtw.WriteEndElement();
         }
 
-        protected object ParseValue(
-          XmlNode node,
-          Type ValueType,
-          ParseStack parseStack,
-          MappingAction mappingAction)
+        protected object ParseValue(XmlNode node, Type ValueType, ParseStack parseStack, MappingAction mappingAction)
         {
-            return ParseValue(node, ValueType, parseStack, mappingAction,
-              out _, out _);
+            return ParseValue(node, ValueType, parseStack, mappingAction, out _, out _);
         }
 
-        public
-        object ParseValue(
-          XmlNode node,
-          Type ValueType,
-          ParseStack parseStack,
-          MappingAction mappingAction,
-          out Type ParsedType,
-          out Type ParsedArrayType)
+        object ParseValue(XmlNode node, Type ValueType, ParseStack parseStack, MappingAction mappingAction, out Type ParsedType, out Type ParsedArrayType)
         {
+            var parser = new XmlParser();
+
             ParsedType = null;
             ParsedArrayType = null;
             // if suppplied type is System.object then ignore it because
@@ -291,12 +285,8 @@ namespace XmlRpc.Client.Serializer
             else if (node is XmlText || node is XmlWhitespace)
             {
                 if (valType != null && valType != typeof(string))
-                {
-                    throw new XmlRpcTypeMismatchException(parseStack.ParseType
-                      + " contains implicit string value where "
-                      + XmlRpcServiceInfo.GetXmlRpcTypeString(valType)
-                      + " expected " + StackDump(parseStack));
-                }
+                    throw new XmlRpcTypeMismatchException(parseStack.ParseType + " contains implicit string value where " + XmlRpcServiceInfo.GetXmlRpcTypeString(valType) + " expected " + parseStack.Dump());
+
                 retObj = node.Value;
             }
             else
@@ -304,62 +294,58 @@ namespace XmlRpc.Client.Serializer
                 if (node.Name == "array")
                     retObj = ParseArray(node, valType, parseStack, mappingAction);
                 else if (node.Name == "base64")
-                    retObj = ParseBase64(node, valType, parseStack);
+                    retObj = parser.ParseBase64(node, valType, parseStack);
                 else if (node.Name == "struct")
                 {
                     // if we don't know the expected class type then we must
                     // parse the XML-RPC class as an instance of XmlRpcStruct
-                    if (valType != null && valType != typeof(XmlRpcStruct)
-                      && !valType.IsSubclassOf(typeof(XmlRpcStruct)))
-                    {
+                    if (valType != null && valType != typeof(XmlRpcStruct) && !valType.IsSubclassOf(typeof(XmlRpcStruct)))
                         retObj = ParseStruct(node, valType, parseStack, mappingAction);
-                    }
                     else
-                    {
                         retObj = ParseHashtable(node, parseStack, mappingAction);
-                    }
                 }
-                else if (node.Name == "i4"  // integer has two representations in XML-RPC spec
-                  || node.Name == "int")
+                else if (node.Name == "i4" || node.Name == "int") // integer has two representations in XML-RPC spec
                 {
-                    retObj = ParseInt(node, valType, parseStack);
+                    retObj = parser.ParseInt(node, valType, parseStack);
                     ParsedType = typeof(int);
                     ParsedArrayType = typeof(int[]);
                 }
                 else if (node.Name == "i8")
                 {
-                    retObj = ParseLong(node, valType, parseStack);
+                    retObj = parser.ParseLong(node, valType, parseStack);
                     ParsedType = typeof(long);
                     ParsedArrayType = typeof(long[]);
                 }
                 else if (node.Name == "string")
                 {
-                    retObj = ParseString(node, valType, parseStack);
+                    retObj = parser.ParseString(node, valType, parseStack);
                     ParsedType = typeof(string);
                     ParsedArrayType = typeof(string[]);
                 }
                 else if (node.Name == "boolean")
                 {
-                    retObj = ParseBoolean(node, valType, parseStack);
+                    retObj = parser.ParseBoolean(node, valType, parseStack);
                     ParsedType = typeof(bool);
                     ParsedArrayType = typeof(bool[]);
                 }
                 else if (node.Name == "double")
                 {
-                    retObj = ParseDouble(node, valType, parseStack);
+                    retObj = parser.ParseDouble(node, valType, parseStack);
                     ParsedType = typeof(double);
                     ParsedArrayType = typeof(double[]);
                 }
                 else if (node.Name == "dateTime.iso8601")
                 {
-                    retObj = ParseDateTime(node, valType, parseStack);
+                    retObj = parser.ParseDateTime(node, valType, parseStack, Configuration.MapEmptyDateTimeToMinValue(), Configuration.MapZerosDateTimeToMinValue());
                     ParsedType = typeof(DateTime);
                     ParsedArrayType = typeof(DateTime[]);
                 }
                 else
-                    throw new XmlRpcInvalidXmlRpcException(
-                      "Invalid value element: <" + node.Name + ">");
+                {
+                    throw new XmlRpcInvalidXmlRpcException("Invalid value element: <" + node.Name + ">");
+                }
             }
+
             return retObj;
         }
 
@@ -378,7 +364,7 @@ namespace XmlRpc.Client.Serializer
                 throw new XmlRpcTypeMismatchException(parseStack.ParseType
                   + " contains array value where "
                   + XmlRpcServiceInfo.GetXmlRpcTypeString(ValueType)
-                  + " expected " + StackDump(parseStack));
+                  + " expected " + parseStack.Dump());
             }
             if (ValueType != null)
             {
@@ -546,7 +532,7 @@ namespace XmlRpc.Client.Serializer
                 throw new XmlRpcTypeMismatchException(parseStack.ParseType
                   + " contains class value where "
                   + XmlRpcServiceInfo.GetXmlRpcTypeString(valueType)
-                  + " expected " + StackDump(parseStack));
+                  + " expected " + parseStack.Dump());
             }
 
             if (valueType.IsGenericType
@@ -566,7 +552,7 @@ namespace XmlRpc.Client.Serializer
                   + " contains class value where "
                   + XmlRpcServiceInfo.GetXmlRpcTypeString(valueType)
                   + " expected (as type " + valueType.Name + ") "
-                  + StackDump(parseStack));
+                  + parseStack.Dump());
             }
             // Note: mapping action on a class is only applied locally - it 
             // does not override the global mapping action when members of the 
@@ -608,20 +594,20 @@ namespace XmlRpc.Client.Serializer
                 if (nameNode == null || nameNode.FirstChild == null)
                     throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
                       + " contains a member with missing name"
-                      + " " + StackDump(parseStack));
+                      + " " + parseStack.Dump());
                 if (dupName)
                     throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
                       + " contains member with more than one name element"
-                      + " " + StackDump(parseStack));
+                      + " " + parseStack.Dump());
                 string name = nameNode.FirstChild.Value;
                 if (valueNode == null)
                     throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
                       + " contains class member " + name + " with missing value "
-                      + " " + StackDump(parseStack));
+                      + " " + parseStack.Dump());
                 if (dupValue)
                     throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
                       + " contains member with more than one value element"
-                      + " " + StackDump(parseStack));
+                      + " " + parseStack.Dump());
                 string structName = GetStructName(valueType, name);
                 if (structName != null)
                     name = structName;
@@ -639,13 +625,13 @@ namespace XmlRpc.Client.Serializer
                         parseStack.Push(String.Format("member {0}", name));
                         throw new XmlRpcNonSerializedMember("Cannot map XML-RPC class "
                           + "member onto member marked as [NonSerialized]: "
-                          + " " + StackDump(parseStack));
+                          + " " + parseStack.Dump());
                     }
                     if (!Configuration.IgnoreDuplicateMembers())
                         throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
                           + " contains class value with duplicate member "
                           + nameNode.FirstChild.Value
-                          + " " + StackDump(parseStack));
+                          + " " + parseStack.Dump());
                     else
                         continue;   // ignore duplicate member
                 }
@@ -732,7 +718,7 @@ namespace XmlRpc.Client.Serializer
                     plural = "s";
                 throw new XmlRpcTypeMismatchException(parseStack.ParseType
                   + " contains class value with missing non-optional member"
-                  + plural + ": " + sb.ToString() + " " + StackDump(parseStack));
+                  + plural + ": " + sb.ToString() + " " + parseStack.Dump());
             }
         }
 
@@ -829,27 +815,27 @@ namespace XmlRpc.Client.Serializer
                     if (nameNode == null || nameNode.FirstChild == null)
                         throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
                           + " contains a member with missing name"
-                          + " " + StackDump(parseStack));
+                          + " " + parseStack.Dump());
                     if (dupName)
                         throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
                           + " contains member with more than one name element"
-                          + " " + StackDump(parseStack));
+                          + " " + parseStack.Dump());
                     string rpcName = nameNode.FirstChild.Value;
                     if (valueNode == null)
                         throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
                           + " contains class member " + rpcName + " with missing value "
-                          + " " + StackDump(parseStack));
+                          + " " + parseStack.Dump());
                     if (dupValue)
                         throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
                           + " contains member with more than one value element"
-                          + " " + StackDump(parseStack));
+                          + " " + parseStack.Dump());
                     if (retObj.Contains(rpcName))
                     {
                         if (!Configuration.IgnoreDuplicateMembers())
                             throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
                               + " contains class value with duplicate member "
                               + nameNode.FirstChild.Value
-                              + " " + StackDump(parseStack));
+                              + " " + parseStack.Dump());
                         else
                             continue;
                     }
@@ -875,309 +861,30 @@ namespace XmlRpc.Client.Serializer
             return retObj;
         }
 
-        object ParseInt(
-          XmlNode node,
-            Type ValueType,
-            ParseStack parseStack)
+
+
+        public void SerializeFaultResponse(
+          Stream stm,
+          XmlRpcFaultException faultEx)
         {
-            if (ValueType != null && ValueType != typeof(object)
-              && ValueType != typeof(System.Int32)
- && ValueType != typeof(int?)
- && ValueType != typeof(XmlRpcInt))
+            var fs = new FaultStruct
             {
-                throw new XmlRpcTypeMismatchException(parseStack.ParseType +
-                  " contains int value where "
-                  + XmlRpcServiceInfo.GetXmlRpcTypeString(ValueType)
-                  + " expected " + StackDump(parseStack));
-            }
-            int retVal;
-            parseStack.Push("integer");
-            try
-            {
-                XmlNode valueNode = node.FirstChild;
-                if (valueNode == null)
-                {
-                    throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
-                      + " contains invalid int element " + StackDump(parseStack));
-                }
-                try
-                {
-                    String strValue = valueNode.Value;
-                    retVal = Int32.Parse(strValue);
-                }
-                catch (Exception)
-                {
-                    throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
-                      + " contains invalid int value " + StackDump(parseStack));
-                }
-            }
-            finally
-            {
-                parseStack.Pop();
-            }
-            if (ValueType == typeof(XmlRpcInt))
-                return new XmlRpcInt(retVal);
-            else
-                return retVal;
+                faultCode = faultEx.FaultCode,
+                faultString = faultEx.FaultString
+            };
+
+            XmlTextWriter xtw = new XmlTextWriter(stm, Configuration.XmlEncoding);
+            Configuration.ConfigureXmlFormat(xtw);
+            xtw.WriteStartDocument();
+            xtw.WriteStartElement("", "methodResponse", "");
+            xtw.WriteStartElement("", "fault", "");
+            Serialize(xtw, fs, MappingAction.Error);
+            xtw.WriteEndElement();
+            xtw.WriteEndElement();
+            xtw.Flush();
         }
 
-        object ParseLong(
-          XmlNode node,
-            Type ValueType,
-            ParseStack parseStack)
-        {
-            if (ValueType != null && ValueType != typeof(object)
-              && ValueType != typeof(System.Int64)
-              && ValueType != typeof(long?)
-
-      )
-            {
-                throw new XmlRpcTypeMismatchException(parseStack.ParseType +
-                  " contains i8 value where "
-                  + XmlRpcServiceInfo.GetXmlRpcTypeString(ValueType)
-                  + " expected " + StackDump(parseStack));
-            }
-            long retVal;
-            parseStack.Push("i8");
-            try
-            {
-                XmlNode valueNode = node.FirstChild;
-                if (valueNode == null)
-                {
-                    throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
-                      + " contains invalid i8 element " + StackDump(parseStack));
-                }
-                try
-                {
-                    String strValue = valueNode.Value;
-                    retVal = Int64.Parse(strValue);
-                }
-                catch (Exception)
-                {
-                    throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
-                      + " contains invalid i8 value " + StackDump(parseStack));
-                }
-            }
-            finally
-            {
-                parseStack.Pop();
-            }
-            return retVal;
-        }
-
-        object ParseString(
-          XmlNode node,
-            Type ValueType,
-            ParseStack parseStack)
-        {
-            if (ValueType != null && ValueType != typeof(System.String)
-              && ValueType != typeof(object))
-            {
-                throw new XmlRpcTypeMismatchException(parseStack.ParseType
-                  + " contains string value where "
-                  + XmlRpcServiceInfo.GetXmlRpcTypeString(ValueType)
-                  + " expected " + StackDump(parseStack));
-            }
-            string ret;
-            parseStack.Push("string");
-            try
-            {
-                if (node.FirstChild == null)
-                    ret = "";
-                else
-                    ret = node.FirstChild.Value;
-            }
-            finally
-            {
-                parseStack.Pop();
-            }
-            return ret;
-        }
-
-        object ParseBoolean(
-          XmlNode node,
-            Type ValueType,
-            ParseStack parseStack)
-        {
-            if (ValueType != null && ValueType != typeof(object)
-              && ValueType != typeof(System.Boolean)
- && ValueType != typeof(bool?)
- && ValueType != typeof(XmlRpcBoolean))
-            {
-                throw new XmlRpcTypeMismatchException(parseStack.ParseType
-                  + " contains boolean value where "
-                  + XmlRpcServiceInfo.GetXmlRpcTypeString(ValueType)
-                  + " expected " + StackDump(parseStack));
-            }
-            bool retVal;
-            parseStack.Push("boolean");
-            try
-            {
-                string s = node.FirstChild.Value;
-                if (s == "1")
-                {
-                    retVal = true;
-                }
-                else if (s == "0")
-                {
-                    retVal = false;
-                }
-                else
-                {
-                    throw new XmlRpcInvalidXmlRpcException(
-                      "reponse contains invalid boolean value "
-                      + StackDump(parseStack));
-                }
-            }
-            finally
-            {
-                parseStack.Pop();
-            }
-            if (ValueType == typeof(XmlRpcBoolean))
-                return new XmlRpcBoolean(retVal);
-            else
-                return retVal;
-        }
-
-        object ParseDouble(
-          XmlNode node,
-            Type ValueType,
-            ParseStack parseStack)
-        {
-            if (ValueType != null && ValueType != typeof(object)
-              && ValueType != typeof(System.Double)
- && ValueType != typeof(double?)
- && ValueType != typeof(XmlRpcDouble))
-            {
-                throw new XmlRpcTypeMismatchException(parseStack.ParseType
-                  + " contains double value where "
-                  + XmlRpcServiceInfo.GetXmlRpcTypeString(ValueType)
-                  + " expected " + StackDump(parseStack));
-            }
-            Double retVal;
-            parseStack.Push("double");
-            try
-            {
-                retVal = Double.Parse(node.FirstChild.Value,
-                  CultureInfo.InvariantCulture.NumberFormat);
-            }
-            catch (Exception)
-            {
-                throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
-                  + " contains invalid double value " + StackDump(parseStack));
-            }
-            finally
-            {
-                parseStack.Pop();
-            }
-            if (ValueType == typeof(XmlRpcDouble))
-                return new XmlRpcDouble(retVal);
-            else
-                return retVal;
-        }
-
-        object ParseDateTime(
-          XmlNode node,
-            Type ValueType,
-            ParseStack parseStack)
-        {
-            if (ValueType != null && ValueType != typeof(object)
-              && ValueType != typeof(System.DateTime)
- && ValueType != typeof(DateTime?)
- && ValueType != typeof(XmlRpcDateTime))
-            {
-                throw new XmlRpcTypeMismatchException(parseStack.ParseType
-                  + " contains dateTime.iso8601 value where "
-                  + XmlRpcServiceInfo.GetXmlRpcTypeString(ValueType)
-                  + " expected " + StackDump(parseStack));
-            }
-            DateTime retVal;
-            parseStack.Push("dateTime");
-            try
-            {
-                XmlNode child = node.FirstChild;
-                if (child == null)
-                {
-                    if (Configuration.MapEmptyDateTimeToMinValue())
-                        return DateTime.MinValue;
-                    else
-                        throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
-                          + " contains empty dateTime value "
-                          + StackDump(parseStack));
-                }
-                string s = child.Value;
-                // Allow various iso8601 formats, e.g.
-                //   XML-RPC spec yyyyMMddThh:mm:ss
-                //   WordPress yyyyMMddThh:mm:ssZ
-                //   TypePad yyyy-MM-ddThh:mm:ssZ
-                //   other yyyy-MM-ddThh:mm:ss
-                if (!DateTime8601.TryParseDateTime8601(s, out retVal))
-                {
-                    if (Configuration.MapZerosDateTimeToMinValue() && s.StartsWith("0000")
-                      && (s == "00000000T00:00:00" || s == "0000-00-00T00:00:00Z"
-                      || s == "00000000T00:00:00Z" || s == "0000-00-00T00:00:00"))
-                        retVal = DateTime.MinValue;
-                    else
-                        throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
-                          + " contains invalid dateTime value "
-                          + StackDump(parseStack));
-                }
-            }
-            finally
-            {
-                parseStack.Pop();
-            }
-            if (ValueType == typeof(XmlRpcDateTime))
-                return new XmlRpcDateTime(retVal);
-            else
-                return retVal;
-        }
-
-        object ParseBase64(
-          XmlNode node,
-            Type ValueType,
-            ParseStack parseStack)
-        {
-            if (ValueType != null && ValueType != typeof(byte[])
-              && ValueType != typeof(object))
-            {
-                throw new XmlRpcTypeMismatchException(parseStack.ParseType
-                  + " contains base64 value where "
-                  + XmlRpcServiceInfo.GetXmlRpcTypeString(ValueType)
-                  + " expected " + StackDump(parseStack));
-            }
-            byte[] ret;
-            parseStack.Push("base64");
-            try
-            {
-                if (node.FirstChild == null)
-                    ret = new byte[0];
-                else
-                {
-                    string s = node.FirstChild.Value;
-                    try
-                    {
-                        ret = Convert.FromBase64String(s);
-                    }
-                    catch (Exception)
-                    {
-                        throw new XmlRpcInvalidXmlRpcException(parseStack.ParseType
-                          + " contains invalid base64 value "
-                          + StackDump(parseStack));
-                    }
-                }
-            }
-            finally
-            {
-                parseStack.Pop();
-            }
-            return ret;
-        }
-
-        protected XmlRpcFaultException ParseFault(
-          XmlNode faultNode,
-          ParseStack parseStack,
-          MappingAction mappingAction)
+        protected XmlRpcFaultException ParseFault(XmlNode faultNode, ParseStack parseStack, MappingAction mappingAction)
         {
             XmlNode valueNode = SelectSingleNode(faultNode, "value");
             XmlNode structNode = SelectSingleNode(valueNode, "struct");
@@ -1215,41 +922,6 @@ namespace XmlRpc.Client.Serializer
                 }
             }
             return new XmlRpcFaultException(fault.faultCode, fault.faultString);
-        }
-
-        public void SerializeFaultResponse(
-          Stream stm,
-          XmlRpcFaultException faultEx)
-        {
-            var fs = new FaultStruct
-            {
-                faultCode = faultEx.FaultCode,
-                faultString = faultEx.FaultString
-            };
-
-            XmlTextWriter xtw = new XmlTextWriter(stm, Configuration.XmlEncoding);
-            Configuration.ConfigureXmlFormat(xtw);
-            xtw.WriteStartDocument();
-            xtw.WriteStartElement("", "methodResponse", "");
-            xtw.WriteStartElement("", "fault", "");
-            Serialize(xtw, fs, MappingAction.Error);
-            xtw.WriteEndElement();
-            xtw.WriteEndElement();
-            xtw.Flush();
-        }
-
-        string StackDump(ParseStack parseStack)
-        {
-            StringBuilder sb = new StringBuilder();
-            foreach (string elem in parseStack)
-            {
-                sb.Insert(0, elem);
-                sb.Insert(0, " : ");
-            }
-            sb.Insert(0, parseStack.ParseType);
-            sb.Insert(0, "[");
-            sb.Append("]");
-            return sb.ToString();
         }
 
         protected XmlNode SelectSingleNode(XmlNode node, string name)
