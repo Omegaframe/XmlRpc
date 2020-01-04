@@ -155,7 +155,7 @@ namespace XmlRpc.Client.Serializer
             {
                 xtw.WriteStartElement("", "struct", "");
                 var mis = targetObject.GetType().GetMembers();
-                var structAction = parser.StructMappingAction(targetObject.GetType(), mappingAction);
+                var structAction = AttributeHelper.StructMappingAction(targetObject.GetType(), mappingAction);
 
                 foreach (var mi in mis)
                 {
@@ -176,7 +176,7 @@ namespace XmlRpc.Client.Serializer
 
                         if (fi.GetValue(targetObject) == null)
                         {
-                            var memberAction = parser.MemberMappingAction(targetObject.GetType(), fi.Name, structAction);
+                            var memberAction = AttributeHelper.MemberMappingAction(targetObject.GetType(), fi.Name, structAction);
                             if (memberAction == MappingAction.Ignore)
                                 continue;
 
@@ -205,7 +205,7 @@ namespace XmlRpc.Client.Serializer
 
                         if (pi.GetValue(targetObject) == null)
                         {
-                            var memberAction = parser.MemberMappingAction(targetObject.GetType(), pi.Name, structAction);
+                            var memberAction = AttributeHelper.MemberMappingAction(targetObject.GetType(), pi.Name, structAction);
                             if (memberAction == MappingAction.Ignore)
                                 continue;
                         }
