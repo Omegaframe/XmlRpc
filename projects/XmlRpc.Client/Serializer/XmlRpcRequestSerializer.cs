@@ -11,9 +11,9 @@ namespace XmlRpc.Client.Serializer
 {
     public class XmlRpcRequestSerializer : XmlRpcSerializer
     {
-        public void SerializeRequest(Stream stm, XmlRpcRequest request)
+        public void SerializeRequest(Stream inputStream, XmlRpcRequest request)
         {
-            var xtw = new XmlTextWriter(stm, Configuration.XmlEncoding);
+            var xtw = new XmlTextWriter(inputStream, Configuration.XmlEncoding);
             Configuration.ConfigureXmlFormat(xtw);
 
             xtw.WriteStartDocument();
@@ -34,9 +34,9 @@ namespace XmlRpc.Client.Serializer
                 xtw.WriteStartElement("", "params", "");
 
                 if (!IsStructParamsMethod(request.mi))
-                    SerializeParams(xtw, request, Configuration.MappingAction);
+                    SerializeParams(xtw, request);
                 else
-                    SerializeStructParams(xtw, request, Configuration.MappingAction);
+                    SerializeStructParams(xtw, request);
 
                 xtw.WriteEndElement();
             }
@@ -46,11 +46,11 @@ namespace XmlRpc.Client.Serializer
             }
         }
 
-        void SerializeParams(XmlTextWriter xtw, XmlRpcRequest request, MappingAction mappingAction)
+        void SerializeParams(XmlTextWriter xtw, XmlRpcRequest request)
         {
-            var pis = request.mi?.GetParameters();
+            var parameterInfos = request.mi?.GetParameters();
 
-            if (pis != null && pis.Length != request.args.Length)
+            if (parameterInfos != null && parameterInfos.Length != request.args.Length)
                 throw new XmlRpcInvalidParametersException("Number of request parameters does not match number of proxy method parameters.");
 
             if (request.args.Any(a => a == null))
@@ -58,20 +58,20 @@ namespace XmlRpc.Client.Serializer
 
             for (int i = 0; i < request.args.Length; i++)
             {
-                if (pis != null && Attribute.IsDefined(pis[i], typeof(ParamArrayAttribute)))
+                if (parameterInfos != null && Attribute.IsDefined(parameterInfos[i], typeof(ParamArrayAttribute)))
                 {
                     var arry = (Array)request.args[i];
-                    WriteParamsParameter(arry, mappingAction, xtw);
+                    WriteParamsParameter(arry, xtw);
                     break;
                 }
 
                 xtw.WriteStartElement("", "param", "");
-                Serialize(xtw, request.args[i], mappingAction);
+                Serialize(xtw, request.args[i]);
                 xtw.WriteEndElement();
             }
         }
 
-        void WriteParamsParameter(Array paramArray, MappingAction mappingAction, XmlTextWriter xtw)
+        void WriteParamsParameter(Array paramArray, XmlTextWriter xtw)
         {
             foreach (var param in paramArray)
             {
@@ -79,22 +79,22 @@ namespace XmlRpc.Client.Serializer
                     throw new XmlRpcNullParameterException("Null parameter in params array");
 
                 xtw.WriteStartElement("", "param", "");
-                Serialize(xtw, param, mappingAction);
+                Serialize(xtw, param);
                 xtw.WriteEndElement();
             }
         }
 
-        void SerializeStructParams(XmlTextWriter xtw, XmlRpcRequest request, MappingAction mappingAction)
+        void SerializeStructParams(XmlTextWriter xtw, XmlRpcRequest request)
         {
-            var pis = request.mi.GetParameters();
+            var parameterInfos = request.mi.GetParameters();
 
             if (request.args.Any(a => a == null))
                 throw new XmlRpcNullParameterException($"Null method parameter not allowed.");
 
-            if (request.args.Length != pis.Length)
+            if (request.args.Length != parameterInfos.Length)
                 throw new XmlRpcInvalidParametersException("Number of request parameters does not match number of proxy method parameters.");
 
-            if (Attribute.IsDefined(pis[request.args.Length - 1], typeof(ParamArrayAttribute)))
+            if (Attribute.IsDefined(parameterInfos[request.args.Length - 1], typeof(ParamArrayAttribute)))
                 throw new XmlRpcInvalidParametersException("params parameter cannot be used with StructParams.");
 
             xtw.WriteStartElement("", "param", "");
@@ -104,9 +104,9 @@ namespace XmlRpc.Client.Serializer
             for (int i = 0; i < request.args.Length; i++)
             {
                 xtw.WriteStartElement("", "member", "");
-                xtw.WriteElementString("name", pis[i].Name);
+                xtw.WriteElementString("name", parameterInfos[i].Name);
 
-                Serialize(xtw, request.args[i], mappingAction);
+                Serialize(xtw, request.args[i]);
 
                 xtw.WriteEndElement();
             }
@@ -116,13 +116,13 @@ namespace XmlRpc.Client.Serializer
             xtw.WriteEndElement();
         }
 
-        bool IsStructParamsMethod(MethodInfo mi)
+        bool IsStructParamsMethod(MethodInfo methodInfo)
         {
-            if (mi == null)
+            if (methodInfo == null)
                 return false;
 
             var ret = false;
-            var attr = Attribute.GetCustomAttribute(mi, typeof(XmlRpcMethodAttribute));
+            var attr = Attribute.GetCustomAttribute(methodInfo, typeof(XmlRpcMethodAttribute));
             if (attr != null)
             {
                 var mattr = (XmlRpcMethodAttribute)attr;

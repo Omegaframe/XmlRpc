@@ -20,12 +20,12 @@ namespace XmlRpc.Client.Serializer
             Configuration = new SerializerConfig();
         }
 
-        public void Serialize(XmlTextWriter xtw, object o, MappingAction mappingAction)
+        public void Serialize(XmlTextWriter xtw, object o)
         {
-            Serialize(xtw, o, mappingAction, new ArrayList(16));
+            Serialize(xtw, o, new ArrayList(16));
         }
 
-        public void Serialize(XmlTextWriter xtw, object o, MappingAction mappingAction, ArrayList nestedObjs)
+        public void Serialize(XmlTextWriter xtw, object o, ArrayList nestedObjs)
         {
             if (nestedObjs.Contains(o))
                 throw new XmlRpcUnsupportedTypeException(nestedObjs[0].GetType(), "Cannot serialize recursive data structure");
@@ -33,7 +33,7 @@ namespace XmlRpc.Client.Serializer
             try
             {
                 nestedObjs.Add(o);
-                TrySerialize(xtw, o, mappingAction, nestedObjs);
+                TrySerialize(xtw, o, nestedObjs);
             }
             catch (NullReferenceException)
             {
@@ -45,10 +45,8 @@ namespace XmlRpc.Client.Serializer
             }
         }
 
-        void TrySerialize(XmlTextWriter xtw, object targetObject, MappingAction mappingAction, ArrayList nestedObjs)
+        void TrySerialize(XmlTextWriter xtw, object targetObject, ArrayList nestedObjs)
         {
-            var parser = new XmlParser(Configuration);
-
             xtw.WriteStartElement("", "value", "");
             var xType = XmlRpcServiceInfo.GetXmlRpcType(targetObject.GetType());
 
@@ -62,7 +60,7 @@ namespace XmlRpc.Client.Serializer
                     if (aobj == null)
                         throw new XmlRpcMappingSerializeException($"Items in array cannot be null ({targetObject.GetType().GetElementType()}[]).");
 
-                    Serialize(xtw, aobj, mappingAction, nestedObjs);
+                    Serialize(xtw, aobj, nestedObjs);
                 }
 
                 xtw.WriteEndElement();
@@ -72,7 +70,7 @@ namespace XmlRpc.Client.Serializer
             {
                 var mda = (Array)targetObject;
                 var indices = new int[mda.Rank];
-                BuildArrayXml(xtw, mda, 0, indices, mappingAction, nestedObjs);
+                BuildArrayXml(xtw, mda, 0, indices, nestedObjs);
             }
             else if (xType == XmlRpcType.tBase64)
             {
@@ -126,7 +124,7 @@ namespace XmlRpc.Client.Serializer
                     xtw.WriteStartElement("", "member", "");
                     xtw.WriteElementString("name", skey);
 
-                    Serialize(xtw, xrs[skey], mappingAction, nestedObjs);
+                    Serialize(xtw, xrs[skey], nestedObjs);
 
                     xtw.WriteEndElement();
                 }
@@ -155,7 +153,7 @@ namespace XmlRpc.Client.Serializer
             {
                 xtw.WriteStartElement("", "struct", "");
                 var mis = targetObject.GetType().GetMembers();
-                var structAction = AttributeHelper.StructMappingAction(targetObject.GetType(), mappingAction);
+                var structAction = AttributeHelper.StructMappingAction(targetObject.GetType(), Configuration.MappingAction);
 
                 foreach (var mi in mis)
                 {
@@ -186,7 +184,7 @@ namespace XmlRpc.Client.Serializer
                         xtw.WriteStartElement("", "member", "");
                         xtw.WriteElementString("name", member);
 
-                        Serialize(xtw, fi.GetValue(targetObject), mappingAction, nestedObjs);
+                        Serialize(xtw, fi.GetValue(targetObject), nestedObjs);
 
                         xtw.WriteEndElement();
                     }
@@ -213,7 +211,7 @@ namespace XmlRpc.Client.Serializer
                         xtw.WriteStartElement("", "member", "");
                         xtw.WriteElementString("name", member);
 
-                        Serialize(xtw, pi.GetValue(targetObject, null), mappingAction, nestedObjs);
+                        Serialize(xtw, pi.GetValue(targetObject, null), nestedObjs);
 
                         xtw.WriteEndElement();
                     }
@@ -233,7 +231,7 @@ namespace XmlRpc.Client.Serializer
             xtw.WriteEndElement();
         }
 
-        void BuildArrayXml(XmlTextWriter xtw, Array ary, int curRank, int[] indices, MappingAction mappingAction, ArrayList nestedObjs)
+        void BuildArrayXml(XmlTextWriter xtw, Array ary, int curRank, int[] indices, ArrayList nestedObjs)
         {
             xtw.WriteStartElement("", "array", "");
             xtw.WriteStartElement("", "data", "");
@@ -244,7 +242,7 @@ namespace XmlRpc.Client.Serializer
                 {
                     indices[curRank] = i;
                     xtw.WriteStartElement("", "value", "");
-                    BuildArrayXml(xtw, ary, curRank + 1, indices, mappingAction, nestedObjs);
+                    BuildArrayXml(xtw, ary, curRank + 1, indices, nestedObjs);
                     xtw.WriteEndElement();
                 }
             }
@@ -253,7 +251,7 @@ namespace XmlRpc.Client.Serializer
                 for (int i = 0; i < ary.GetLength(curRank); i++)
                 {
                     indices[curRank] = i;
-                    Serialize(xtw, ary.GetValue(indices), mappingAction, nestedObjs);
+                    Serialize(xtw, ary.GetValue(indices), nestedObjs);
                 }
             }
             xtw.WriteEndElement();
@@ -275,7 +273,7 @@ namespace XmlRpc.Client.Serializer
             xtw.WriteStartElement("", "methodResponse", "");
             xtw.WriteStartElement("", "fault", "");
 
-            Serialize(xtw, fs, MappingAction.Error);
+            Serialize(xtw, fs);
 
             xtw.WriteEndElement();
             xtw.WriteEndElement();

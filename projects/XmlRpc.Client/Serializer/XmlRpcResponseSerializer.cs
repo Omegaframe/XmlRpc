@@ -7,16 +7,16 @@ namespace XmlRpc.Client.Serializer
 {
     public class XmlRpcResponseSerializer : XmlRpcSerializer
     {
-        public void SerializeResponse(Stream stm, XmlRpcResponse response)
+        public void SerializeResponse(Stream inputStream, XmlRpcResponse response)
         {
-            var ret = response.retVal;
-            if (ret is XmlRpcFaultException)
+            var returnValue = response.retVal;
+            if (returnValue is XmlRpcFaultException)
             {
-                SerializeFaultResponse(stm, (XmlRpcFaultException)ret);
+                SerializeFaultResponse(inputStream, (XmlRpcFaultException)returnValue);
                 return;
             }
 
-            var xtw = new XmlTextWriter(stm, Configuration.XmlEncoding);
+            var xtw = new XmlTextWriter(inputStream, Configuration.XmlEncoding);
             Configuration.ConfigureXmlFormat(xtw);
 
             xtw.WriteStartDocument();
@@ -25,10 +25,10 @@ namespace XmlRpc.Client.Serializer
             xtw.WriteStartElement("", "param", "");
 
             // "void" methods actually return an empty value
-            if (ret == null)
+            if (returnValue == null)
                 WriteVoidValue(xtw);
             else
-                WriteReturnValue(xtw, ret);
+                WriteReturnValue(xtw, returnValue);
 
             xtw.WriteEndElement();
             xtw.WriteEndElement();
@@ -40,7 +40,7 @@ namespace XmlRpc.Client.Serializer
         {
             try
             {
-                Serialize(xtw, returnValue, Configuration.MappingAction);
+                Serialize(xtw, returnValue);
             }
             catch (XmlRpcUnsupportedTypeException ex)
             {

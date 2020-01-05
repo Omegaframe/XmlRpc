@@ -9,22 +9,21 @@ namespace XmlRpc.Client.Serializer
 {
     public class XmlRpcResponseDeserializer : XmlRpcSerializer
     {
-        public XmlRpcResponse DeserializeResponse(Stream stm, Type svcType)
+        public XmlRpcResponse DeserializeResponse(Stream inputStream, Type serviceType)
         {
             if (Configuration.AllowInvalidHTTPContent())
             {
-                stm = CopyStream(stm);
-                RemoveLineBreaks(stm); // why are we doing this?
+                inputStream = CopyStream(inputStream);
+                RemoveLineBreaks(inputStream); // why are we doing this?
             }
 
-            var xdoc = XmlDocumentLoader.LoadXmlDocument(stm);
-            return DeserializeResponse(xdoc, svcType);
+            var xdoc = XmlDocumentLoader.LoadXmlDocument(inputStream);
+            return DeserializeResponse(xdoc, serviceType);
         }
 
         public XmlRpcResponse DeserializeResponse(XmlDocument xdoc, Type returnType)
         {
             var parser = new XmlParser(Configuration);
-            var response = new XmlRpcResponse();
             var methodResponseNode = xdoc.SelectSingleNode("methodResponse");
             if (methodResponseNode == null)
                 throw new XmlRpcInvalidXmlRpcException("Response XML not valid XML-RPC - missing methodResponse element.");
@@ -59,7 +58,7 @@ namespace XmlRpc.Client.Serializer
             if (valueNode == null)
                 throw new XmlRpcInvalidXmlRpcException("Response XML not valid XML-RPC - missing value element.");
 
-            response.retVal = null;
+            var response = new XmlRpcResponse { retVal = null };
             if (returnType != typeof(void))
             {
                 var parseStack = new ParseStack("response");
@@ -72,24 +71,24 @@ namespace XmlRpc.Client.Serializer
 
         MemoryStream CopyStream(Stream inputStream)
         {
-            var newStm = new MemoryStream();
-            inputStream.CopyTo(newStm);
-            newStm.Seek(0, SeekOrigin.Begin);
+            var newStream = new MemoryStream();
+            inputStream.CopyTo(newStream);
+            newStream.Seek(0, SeekOrigin.Begin);
 
-            return newStm;
+            return newStream;
         }
 
-        void RemoveLineBreaks(Stream stm)
+        void RemoveLineBreaks(Stream inputStream)
         {
             while (true)
             {
-                var byt = stm.ReadByte();
-                if (byt == -1)
+                var singleByte = inputStream.ReadByte();
+                if (singleByte == -1)
                     throw new XmlRpcIllFormedXmlException("Response from server does not contain valid XML.");
 
-                if (byt != 0x0d && byt != 0x0a && byt != ' ' && byt != '\t')
+                if (singleByte != 0x0d && singleByte != 0x0a && singleByte != ' ' && singleByte != '\t')
                 {
-                    stm.Position -= 1;
+                    inputStream.Position -= 1;
                     break;
                 }
             }
