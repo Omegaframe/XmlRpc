@@ -2,11 +2,10 @@
 using System.Linq;
 using System.Xml;
 
-namespace XmlRpc.Client.Serializer
+namespace XmlRpc.Client.Serializer.Extensions
 {
     static class XmlNodeExtensions
     {
-
         public static XmlNode[] SelectChildNodes(this XmlNode node, string name)
         {
             return node.ChildNodes.Cast<XmlNode>()

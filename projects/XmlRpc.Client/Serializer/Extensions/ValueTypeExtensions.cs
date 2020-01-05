@@ -1,7 +1,7 @@
 ﻿using System;
 using XmlRpc.Client.DataTypes;
 
-namespace XmlRpc.Client.Serializer
+namespace XmlRpc.Client.Serializer.Extensions
 {
     static class ValueTypeExtensions
     {

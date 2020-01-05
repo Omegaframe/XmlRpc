@@ -6,7 +6,6 @@ namespace XmlRpc.Client.Attributes
 {
     static class AttributeHelper
     {
-
         public static MappingAction MemberMappingAction(Type type, string memberName, MappingAction currentAction)
         {
             if (type == null)

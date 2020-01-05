@@ -3,14 +3,15 @@ using System.Xml;
 using XmlRpc.Client.DataTypes;
 using XmlRpc.Client.Exceptions;
 using XmlRpc.Client.Model;
+using XmlRpc.Client.Serializer.Extensions;
 
 namespace XmlRpc.Client.Serializer
 {
-    class XmlDefaultTypeParser
+    class XmlSystemTypeParser
     {
         readonly SerializerConfig _config;
 
-        public XmlDefaultTypeParser(SerializerConfig config)
+        public XmlSystemTypeParser(SerializerConfig config)
         {
             _config = config;
         }

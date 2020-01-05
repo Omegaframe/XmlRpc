@@ -7,6 +7,7 @@ using XmlRpc.Client.Attributes;
 using XmlRpc.Client.DataTypes;
 using XmlRpc.Client.Exceptions;
 using XmlRpc.Client.Model;
+using XmlRpc.Client.Serializer.Extensions;
 
 namespace XmlRpc.Client.Serializer
 {
@@ -78,7 +79,7 @@ namespace XmlRpc.Client.Serializer
 
         object ParseValue(XmlNode node, Type ValueType, ParseStack parseStack, out Type ParsedType, out Type ParsedArrayType)
         {
-            var parser = new XmlDefaultTypeParser(_config);
+            var parser = new XmlSystemTypeParser(_config);
             ParsedType = null;
             ParsedArrayType = null;
             // if suppplied type is System.object then ignore it because

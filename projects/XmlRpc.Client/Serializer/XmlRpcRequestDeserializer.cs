@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -6,25 +7,51 @@ using System.Xml;
 using XmlRpc.Client.Attributes;
 using XmlRpc.Client.Exceptions;
 using XmlRpc.Client.Model;
+using XmlRpc.Client.Serializer.Extensions;
 
 namespace XmlRpc.Client.Serializer
 {
     public class XmlRpcRequestDeserializer : XmlRpcSerializer
     {
-        public XmlRpcRequest DeserializeRequest(Stream stm, Type svcType)
-        {
-            if (stm == null)
-                throw new ArgumentNullException(nameof(stm), "XmlRpcRequestDeserializer.DeserializeRequest");
+        ParseStack _parseStack;
 
-            var xdoc = XmlDocumentLoader.LoadXmlDocument(stm);
-            return DeserializeRequest(xdoc, svcType);
+        public XmlRpcRequest DeserializeRequest(Stream inputStream, Type serviceType)
+        {
+            _parseStack = new ParseStack("request");
+
+            var xdoc = XmlDocumentLoader.LoadXmlDocument(inputStream);
+            return DeserializeRequest(xdoc, serviceType);
         }
 
-        XmlRpcRequest DeserializeRequest(XmlDocument xdoc, Type svcType)
+        XmlRpcRequest DeserializeRequest(XmlDocument xdoc, Type serviceType)
         {
-            var parser = new XmlParser(Configuration);
-            var request = new XmlRpcRequest();
+            var callNode = xdoc.SelectSingleNode("methodCall");
+            var paramsNode = callNode.SelectSingleNode("params");
+            var paramNodes = paramsNode.SelectChildNodes("param");
 
+            var calledMethod = FindCalledMethod(xdoc);
+            var methodInfo = FindMethodInfo(serviceType, calledMethod, paramNodes);
+            var parameterInfos = methodInfo.GetParameters();
+
+            var methodParameter = new List<object>();
+
+            var normalParameter = DeserializeParameter(serviceType, paramNodes, parameterInfos);
+            methodParameter.AddRange(normalParameter);
+
+            var paramsParameter = DeserializeParamsParameter(paramNodes, parameterInfos);
+            if (paramsParameter != null)
+                methodParameter.Add(paramsParameter);
+
+            return new XmlRpcRequest
+            {
+                method = calledMethod,
+                mi = methodInfo,
+                args = methodParameter.ToArray()
+            };
+        }
+
+        string FindCalledMethod(XmlDocument xdoc)
+        {
             var callNode = xdoc.SelectSingleNode("methodCall");
             if (callNode == null)
                 throw new XmlRpcInvalidXmlRpcException("Request XML not valid XML-RPC - missing methodCall element.");
@@ -33,40 +60,41 @@ namespace XmlRpc.Client.Serializer
             if (methodNode?.FirstChild == null)
                 throw new XmlRpcInvalidXmlRpcException("Request XML not valid XML-RPC - missing methodName element.");
 
-            request.method = methodNode.FirstChild.Value;
-            if (request.method == "")
+            var methodName = methodNode.FirstChild.Value;
+            if (string.IsNullOrWhiteSpace(methodName))
                 throw new XmlRpcInvalidXmlRpcException("Request XML not valid XML-RPC - empty methodName.");
 
-            request.mi = null;
+            return methodName;
+        }
+
+        MethodInfo FindMethodInfo(Type serviceType, string calledMethod, XmlNode[] paramNodes)
+        {
             var possibleMethods = new MethodInfo[0];
-            var pis = new ParameterInfo[0];
+            var parameterInfos = new ParameterInfo[0];
 
-            var svcInfo = XmlRpcServiceInfo.CreateServiceInfo(svcType);
-            possibleMethods = svcInfo.GetMethodInfos(request.method);
+            var serviceInfo = XmlRpcServiceInfo.CreateServiceInfo(serviceType);
+            possibleMethods = serviceInfo.GetMethodInfos(calledMethod);
             if (!possibleMethods.Any())
-                throw new XmlRpcUnsupportedMethodException($"unsupported method called: {request.method}");
+                throw new XmlRpcUnsupportedMethodException($"unsupported method called: {calledMethod}");
 
-            // todo: overloads with parameter types instead of simple count
-            // get overloaded method if any
-            var paramsNode = callNode.SelectSingleNode("params");
-            var paramNodes = paramsNode.SelectChildNodes("param");
-            request.mi = possibleMethods.FirstOrDefault(m => m.GetParameters().Length == paramNodes.Length);
-            if (request.mi == null)
-                throw new XmlRpcInvalidParametersException($"The method {request.method} was called with wrong parameter count");
+            var methodInfo = possibleMethods.FirstOrDefault(m => m.GetParameters().Length == paramNodes.Length);
+            if (methodInfo == null)
+                throw new XmlRpcInvalidParametersException($"The method {methodInfo} was called with wrong parameter count");
 
-            var attr = Attribute.GetCustomAttribute(request.mi, typeof(XmlRpcMethodAttribute));
-            if (attr == null)
-                throw new XmlRpcMethodAttributeException($"Method {request.method} must be marked with the XmlRpcMethod attribute.");
+            var rpcAttribute = Attribute.GetCustomAttribute(methodInfo, typeof(XmlRpcMethodAttribute));
+            if (rpcAttribute == null)
+                throw new XmlRpcMethodAttributeException($"Method {calledMethod} must be marked with the XmlRpcMethod attribute.");
 
-            pis = request.mi.GetParameters();
-            var paramsPos = GetParamsPos(pis);
+            return methodInfo;
+        }
 
-            var parseStack = new ParseStack("request");
-            var paramObjCount = (paramsPos == -1 ? paramNodes.Length : paramsPos + 1);
-            var ordinaryParams = (paramsPos == -1 ? paramNodes.Length : paramsPos);
-            var paramObjs = new object[paramObjCount];
+        object[] DeserializeParameter(Type serviceType, XmlNode[] paramNodes, ParameterInfo[] parameterInfos)
+        {
+            var parser = new XmlParser(Configuration);
+            var parameterObjects = new List<object>();
+            var paramterCount = GetParamsPos(parameterInfos) ?? parameterInfos.Length;
 
-            for (int i = 0; i < ordinaryParams; i++)
+            for (int i = 0; i < paramterCount; i++)
             {
                 var paramNode = paramNodes[i];
                 var valueNode = paramNode.SelectSingleNode("value");
@@ -74,53 +102,62 @@ namespace XmlRpc.Client.Serializer
                     throw new XmlRpcInvalidXmlRpcException("Missing value element.");
 
                 var node = valueNode.SelectValueNode();
-                if (svcType != null)
+                if (serviceType != null)
                 {
-                    parseStack.Push($"parameter {i + 1}");
-                    paramObjs[i] = parser.ParseValue(node, pis[i].ParameterType, parseStack);
+                    _parseStack.Push($"parameter {i + 1}");
+                    var parsedValue = parser.ParseValue(node, parameterInfos[i].ParameterType, _parseStack);
+                    parameterObjects.Add(parsedValue);
                 }
                 else
                 {
-                    parseStack.Push($"parameter {i}");
-                    paramObjs[i] = parser.ParseValue(node, null, parseStack);
+                    _parseStack.Push($"parameter {i}");
+                    var parsedValue = parser.ParseValue(node, null, _parseStack);
+                    parameterObjects.Add(parsedValue);
                 }
-                parseStack.Pop();
+
+                _parseStack.Pop();
             }
 
-            if (paramsPos != -1)
-            {
-                var paramsType = pis[paramsPos].ParameterType.GetElementType();
-                var args = new object[1];
-                args[0] = paramNodes.Length - paramsPos;
-                var varargs = (Array)Activator.CreateInstance(pis[paramsPos].ParameterType, args);
-
-                for (int i = 0; i < varargs.Length; i++)
-                {
-                    var paramNode = paramNodes[i + paramsPos];
-                    var valueNode = paramNode.SelectSingleNode("value");
-                    if (valueNode == null)
-                        throw new XmlRpcInvalidXmlRpcException("Missing value element.");
-
-                    var node = valueNode.SelectValueNode();
-                    parseStack.Push($"parameter {i + 1 + paramsPos}");
-                    varargs.SetValue(parser.ParseValue(node, paramsType, parseStack), i);
-                    parseStack.Pop();
-                }
-                paramObjs[paramsPos] = varargs;
-            }
-            request.args = paramObjs;
-            return request;
+            return parameterObjects.ToArray();
         }
 
-        int GetParamsPos(ParameterInfo[] pis)
+        Array DeserializeParamsParameter(XmlNode[] paramNodes, ParameterInfo[] parameterInfos)
         {
-            if (pis.Length == 0)
-                return -1;
+            var paramsPosition = GetParamsPos(parameterInfos);
+            if (!paramsPosition.HasValue)
+                return null;
 
-            if (Attribute.IsDefined(pis[^1], typeof(ParamArrayAttribute)))
-                return pis.Length - 1;
+            var parser = new XmlParser(Configuration);
+            var paramsParameter = parameterInfos[paramsPosition.Value];
+            var paramsType = paramsParameter.ParameterType.GetElementType();
+            var numberOfParamsParameter = paramNodes.Length - paramsPosition;
+            var paramsArray = (Array)Activator.CreateInstance(paramsParameter.ParameterType, numberOfParamsParameter);
 
-            return -1;
+            for (int i = 0; i < paramsArray.Length; i++)
+            {
+                var paramNode = paramNodes[i + paramsPosition.Value];
+                var valueNode = paramNode.SelectSingleNode("value");
+                if (valueNode == null)
+                    throw new XmlRpcInvalidXmlRpcException("Missing value element.");
+
+                var node = valueNode.SelectValueNode();
+                _parseStack.Push($"parameter {i + 1 + paramsPosition}");
+                paramsArray.SetValue(parser.ParseValue(node, paramsType, _parseStack), i);
+                _parseStack.Pop();
+            }
+
+            return paramsArray;
+        }
+
+        int? GetParamsPos(ParameterInfo[] parameterInfo)
+        {
+            if (parameterInfo.Length == 0)
+                return null;
+
+            if (Attribute.IsDefined(parameterInfo[^1], typeof(ParamArrayAttribute)))
+                return parameterInfo.Length - 1;
+
+            return null;
         }
     }
 }
