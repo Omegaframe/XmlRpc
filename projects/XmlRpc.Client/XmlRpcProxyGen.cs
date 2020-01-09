@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -40,49 +41,50 @@ namespace XmlRpc.Client
             return assemblyBuilder.GetType(randomName);
         }
 
-        static AssemblyBuilder BuildAssembly(Type serviceType, string assemblyName, string typeName, AssemblyBuilderAccess access)
+        static AssemblyBuilder BuildAssembly(Type serviceType, string name, string typeName, AssemblyBuilderAccess access)
         {
             var serviceUri = GetXmlRpcUri(serviceType);
             var methods = GetXmlRpcMethods(serviceType);
+            var beginMethods = GetXmlRpcBeginMethods(serviceType);
+            var endMethods = GetXmlRpcEndMethods(serviceType);
 
-            ArrayList beginMethods = GetXmlRpcBeginMethods(serviceType);
-            ArrayList endMethods = GetXmlRpcEndMethods(serviceType);
-            AssemblyName assName = new AssemblyName();
-            assName.Name = assemblyName;
+            var assemblyName = new AssemblyName { Name = name };
+
             if (access == AssemblyBuilderAccess.Run)
-                assName.Version = serviceType.Assembly.GetName().Version;
-            AssemblyBuilder assBldr = AssemblyBuilder.DefineDynamicAssembly(assName, access);
-            ModuleBuilder modBldr = assBldr.DefineDynamicModule(assName.Name);
-            TypeBuilder typeBldr = modBldr.DefineType(
-              typeName,
-              TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public,
-              typeof(XmlRpcClientProtocol),
-              new Type[] { serviceType });
-            BuildConstructor(typeBldr, typeof(XmlRpcClientProtocol), serviceUri);
-            BuildMethods(typeBldr, methods);
-            BuildBeginMethods(typeBldr, beginMethods);
-            BuildEndMethods(typeBldr, endMethods);
-            typeBldr.CreateTypeInfo();
+                assemblyName.Version = serviceType.Assembly.GetName().Version;
 
-            return assBldr;
+            var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, access);
+            var moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName.Name);
+            var typeBuilder = moduleBuilder.DefineType(typeName, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public, typeof(XmlRpcClientProtocol), new Type[] { serviceType });
+
+            BuildConstructor(typeBuilder, typeof(XmlRpcClientProtocol), serviceUri);
+            BuildMethods(typeBuilder, methods);
+            BuildBeginMethods(typeBuilder, beginMethods);
+            BuildEndMethods(typeBuilder, endMethods);
+
+            typeBuilder.CreateTypeInfo();
+
+            return assemblyBuilder;
         }
 
-        static void BuildMethods(TypeBuilder tb, ArrayList methods)
+        static void BuildMethods(TypeBuilder typeBuilder, MethodData[] methods)
         {
-            foreach (MethodData mthdData in methods)
+            foreach (var method in methods)
             {
-                MethodInfo mi = mthdData.Mi;
-                Type[] argTypes = new Type[mi.GetParameters().Length];
-                string[] paramNames = new string[mi.GetParameters().Length];
-                for (int i = 0; i < mi.GetParameters().Length; i++)
+                var methodInfo = method.MethodInfo;
+                var parameters = methodInfo.GetParameters();
+
+                var argTypes = new Type[parameters.Length];
+                var paramNames = new string[parameters.Length];
+
+                for (int i = 0; i < parameters.Length; i++)
                 {
-                    argTypes[i] = mi.GetParameters()[i].ParameterType;
-                    paramNames[i] = mi.GetParameters()[i].Name;
+                    argTypes[i] = parameters[i].ParameterType;
+                    paramNames[i] = parameters[i].Name;
                 }
-                XmlRpcMethodAttribute mattr = (XmlRpcMethodAttribute)
-                  Attribute.GetCustomAttribute(mi, typeof(XmlRpcMethodAttribute));
-                BuildMethod(tb, mi.Name, mthdData.XmlRpcName, paramNames, argTypes,
-                  mthdData.IsParamsMethod, mi.ReturnType, mattr.StructParams);
+
+                var mattr = (XmlRpcMethodAttribute)Attribute.GetCustomAttribute(methodInfo, typeof(XmlRpcMethodAttribute));
+                BuildMethod(typeBuilder, methodInfo.Name, method.XmlRpcName, paramNames, argTypes, method.IsParamsMethod, methodInfo.ReturnType, mattr.StructParams);
             }
         }
 
@@ -193,7 +195,7 @@ namespace XmlRpc.Client
         {
             foreach (MethodData mthdData in methods)
             {
-                MethodInfo mi = mthdData.Mi;
+                MethodInfo mi = mthdData.MethodInfo;
                 // assume method has already been validated for required signature   
                 int paramCount = mi.GetParameters().Length;
                 // argCount counts of params before optional AsyncCallback param
@@ -286,7 +288,7 @@ namespace XmlRpc.Client
             LocalBuilder tempRetVal = null;
             foreach (MethodData mthdData in methods)
             {
-                MethodInfo mi = mthdData.Mi;
+                MethodInfo mi = mthdData.MethodInfo;
                 Type[] argTypes = new Type[] { typeof(System.IAsyncResult) };
                 MethodBuilder mthdBldr = tb.DefineMethod(mi.Name,
                   MethodAttributes.Public | MethodAttributes.Virtual,
@@ -344,29 +346,29 @@ namespace XmlRpc.Client
             }
         }
 
-        static void BuildConstructor(
-          TypeBuilder typeBldr,
-          Type baseType,
-          string urlStr)
+        static void BuildConstructor(TypeBuilder typeBuilder, Type baseType, string url)
         {
-            ConstructorBuilder ctorBldr = typeBldr.DefineConstructor(
-              MethodAttributes.Public | MethodAttributes.SpecialName |
-              MethodAttributes.RTSpecialName | MethodAttributes.HideBySig,
-              CallingConventions.Standard,
-              Type.EmptyTypes);
-            if (urlStr != null && urlStr.Length > 0)
+            var ctorInfo = baseType.GetConstructor(Type.EmptyTypes);
+            var ctorBuilder = typeBuilder.DefineConstructor(
+                MethodAttributes.Public |
+                MethodAttributes.SpecialName | 
+                MethodAttributes.RTSpecialName |
+                MethodAttributes.HideBySig, 
+                CallingConventions.Standard, 
+                Type.EmptyTypes);
+
+            if (!string.IsNullOrWhiteSpace(url))
             {
-                Type urlAttr = typeof(XmlRpcUrlAttribute);
-                Type[] oneString = new Type[1] { typeof(string) };
-                ConstructorInfo ci = urlAttr.GetConstructor(oneString);
-                CustomAttributeBuilder cab =
-                  new CustomAttributeBuilder(ci, new object[] { urlStr });
-                typeBldr.SetCustomAttribute(cab);
+                var urlAttr = typeof(XmlRpcUrlAttribute);
+                var oneString = new[] { typeof(string) };
+                var constructor = urlAttr.GetConstructor(oneString);
+                var attributeBuilder = new CustomAttributeBuilder(constructor, new object[] { url });
+
+                typeBuilder.SetCustomAttribute(attributeBuilder);
             }
-            ILGenerator ilgen = ctorBldr.GetILGenerator();
-            //  Call the base constructor.
+
+            var ilgen = ctorBuilder.GetILGenerator();
             ilgen.Emit(OpCodes.Ldarg_0);
-            ConstructorInfo ctorInfo = baseType.GetConstructor(System.Type.EmptyTypes);
             ilgen.Emit(OpCodes.Call, ctorInfo);
             ilgen.Emit(OpCodes.Ret);
         }
@@ -381,9 +383,9 @@ namespace XmlRpc.Client
             return xruAttr.Uri;
         }
 
-        static ArrayList GetXmlRpcMethods(Type serviceType)
+        static MethodData[] GetXmlRpcMethods(Type serviceType)
         {
-            var xmlRpcMethods = new ArrayList();
+            var xmlRpcMethodInfos = new List<MethodData>();
             foreach (var methodInfo in SystemHelper.GetMethods(serviceType))
             {
                 var xmlRpcName = GetXmlRpcMethodName(methodInfo);
@@ -394,10 +396,10 @@ namespace XmlRpc.Client
                 var hasParamsParameter = Attribute.IsDefined(parameterInfos[^1], typeof(ParamArrayAttribute));
                 var methodData = new MethodData(methodInfo, xmlRpcName, hasParamsParameter);
 
-                xmlRpcMethods.Add(methodData);
+                xmlRpcMethodInfos.Add(methodData);
             }
 
-            return xmlRpcMethods;
+            return xmlRpcMethodInfos.ToArray();
         }
 
         static string GetXmlRpcMethodName(MethodInfo methodInfo)
