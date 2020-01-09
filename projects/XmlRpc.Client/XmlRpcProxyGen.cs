@@ -1,84 +1,64 @@
 using System;
 using System.Collections;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using XmlRpc.Client.Attributes;
-
+using XmlRpc.Client.Exceptions;
 
 namespace XmlRpc.Client
 {
-    public class XmlRpcProxyGen
+    public static class XmlRpcProxyGen
     {
         static readonly Hashtable _types = new Hashtable();
 
-        public static T Create<T>()
+        public static T Create<T>() where T : IXmlRpcProxy
         {
             return (T)Create(typeof(T));
         }
 
-        public static object Create(Type itf)
+        public static object Create(Type serviceType)
         {
-            // create transient assembly
-            Type proxyType;
-            lock (typeof(XmlRpcProxyGen))
-            {
-                proxyType = (Type)_types[itf];
-                if (proxyType == null)
-                {
-                    Guid guid = Guid.NewGuid();
-                    string assemblyName = "XmlRpcProxy" + guid.ToString();
-                    string moduleName = "XmlRpcProxy" + guid.ToString() + ".dll";
-                    string typeName = "XmlRpcProxy" + guid.ToString();
-                    AssemblyBuilder assBldr = BuildAssembly(itf, assemblyName,
-                      typeName, AssemblyBuilderAccess.Run);
-                    proxyType = assBldr.GetType(typeName);
-                    _types.Add(itf, proxyType);
-                }
-            }
-            object ret = Activator.CreateInstance(proxyType);
-            return ret;
+            if (!serviceType.IsInterface)
+                throw new XmlRpcServiceIsNoInterfaceException($"Requested Type {serviceType.Name} is no interface but has to be one.");
+
+            if (!typeof(IXmlRpcProxy).IsAssignableFrom(serviceType))
+                throw new XmlRpcServiceInterfaceNotImplementedException($"Requested Type {serviceType.Name} does not implement required interface {nameof(IXmlRpcProxy)}");
+
+            var proxyType = (Type)_types[serviceType] ?? BuildServiceType(serviceType);
+            return Activator.CreateInstance(proxyType);
         }
 
-        public static object CreateAssembly(
-          Type itf,
-          string typeName,
-          string assemblyName
-          )
+        static Type BuildServiceType(Type serviceType)
         {
-            // create persistable assembly
-            if (assemblyName.IndexOf(".dll") == (assemblyName.Length - 4))
-                assemblyName = assemblyName[0..^4];
-            string moduleName = assemblyName + ".dll";
-            AssemblyBuilder assBldr = BuildAssembly(itf, assemblyName,
-              typeName, AssemblyBuilderAccess.Run);
-            Type proxyType = assBldr.GetType(typeName);
-            object ret = Activator.CreateInstance(proxyType);
-            //assBldr.Save(moduleName);
-            return ret;
+            const string assemblyNamePrefix = "XmlRpc_";
+
+            var guid = Guid.NewGuid().ToString();
+            var randomName = assemblyNamePrefix + guid;
+            var assemblyBuilder = BuildAssembly(serviceType, randomName, randomName, AssemblyBuilderAccess.Run);
+
+            return assemblyBuilder.GetType(randomName);
         }
 
-        static AssemblyBuilder BuildAssembly(
-          Type itf,
-          string assemblyName,
-          string typeName,
-          AssemblyBuilderAccess access)
+        static AssemblyBuilder BuildAssembly(Type serviceType, string assemblyName, string typeName, AssemblyBuilderAccess access)
         {
-            string urlString = GetXmlRpcUrl(itf);
-            ArrayList methods = GetXmlRpcMethods(itf);
-            ArrayList beginMethods = GetXmlRpcBeginMethods(itf);
-            ArrayList endMethods = GetXmlRpcEndMethods(itf);
+            var serviceUri = GetXmlRpcUri(serviceType);
+            var methods = GetXmlRpcMethods(serviceType);
+
+            ArrayList beginMethods = GetXmlRpcBeginMethods(serviceType);
+            ArrayList endMethods = GetXmlRpcEndMethods(serviceType);
             AssemblyName assName = new AssemblyName();
             assName.Name = assemblyName;
             if (access == AssemblyBuilderAccess.Run)
-                assName.Version = itf.Assembly.GetName().Version;
+                assName.Version = serviceType.Assembly.GetName().Version;
             AssemblyBuilder assBldr = AssemblyBuilder.DefineDynamicAssembly(assName, access);
             ModuleBuilder modBldr = assBldr.DefineDynamicModule(assName.Name);
             TypeBuilder typeBldr = modBldr.DefineType(
               typeName,
               TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public,
               typeof(XmlRpcClientProtocol),
-              new Type[] { itf });
-            BuildConstructor(typeBldr, typeof(XmlRpcClientProtocol), urlString);
+              new Type[] { serviceType });
+            BuildConstructor(typeBldr, typeof(XmlRpcClientProtocol), serviceUri);
             BuildMethods(typeBldr, methods);
             BuildBeginMethods(typeBldr, beginMethods);
             BuildEndMethods(typeBldr, endMethods);
@@ -91,7 +71,7 @@ namespace XmlRpc.Client
         {
             foreach (MethodData mthdData in methods)
             {
-                MethodInfo mi = mthdData.mi;
+                MethodInfo mi = mthdData.Mi;
                 Type[] argTypes = new Type[mi.GetParameters().Length];
                 string[] paramNames = new string[mi.GetParameters().Length];
                 for (int i = 0; i < mi.GetParameters().Length; i++)
@@ -101,8 +81,8 @@ namespace XmlRpc.Client
                 }
                 XmlRpcMethodAttribute mattr = (XmlRpcMethodAttribute)
                   Attribute.GetCustomAttribute(mi, typeof(XmlRpcMethodAttribute));
-                BuildMethod(tb, mi.Name, mthdData.xmlRpcName, paramNames, argTypes,
-                  mthdData.paramsMethod, mi.ReturnType, mattr.StructParams);
+                BuildMethod(tb, mi.Name, mthdData.XmlRpcName, paramNames, argTypes,
+                  mthdData.IsParamsMethod, mi.ReturnType, mattr.StructParams);
             }
         }
 
@@ -213,7 +193,7 @@ namespace XmlRpc.Client
         {
             foreach (MethodData mthdData in methods)
             {
-                MethodInfo mi = mthdData.mi;
+                MethodInfo mi = mthdData.Mi;
                 // assume method has already been validated for required signature   
                 int paramCount = mi.GetParameters().Length;
                 // argCount counts of params before optional AsyncCallback param
@@ -235,7 +215,7 @@ namespace XmlRpc.Client
                 Type methodAttr = typeof(XmlRpcBeginAttribute);
                 ConstructorInfo ci = methodAttr.GetConstructor(oneString);
                 CustomAttributeBuilder cab =
-                  new CustomAttributeBuilder(ci, new object[] { mthdData.xmlRpcName });
+                  new CustomAttributeBuilder(ci, new object[] { mthdData.XmlRpcName });
                 mthdBldr.SetCustomAttribute(cab);
                 // start generating IL
                 ILGenerator ilgen = mthdBldr.GetILGenerator();
@@ -306,7 +286,7 @@ namespace XmlRpc.Client
             LocalBuilder tempRetVal = null;
             foreach (MethodData mthdData in methods)
             {
-                MethodInfo mi = mthdData.mi;
+                MethodInfo mi = mthdData.Mi;
                 Type[] argTypes = new Type[] { typeof(System.IAsyncResult) };
                 MethodBuilder mthdBldr = tb.DefineMethod(mi.Name,
                   MethodAttributes.Public | MethodAttributes.Virtual,
@@ -391,168 +371,105 @@ namespace XmlRpc.Client
             ilgen.Emit(OpCodes.Ret);
         }
 
-        static string GetXmlRpcUrl(Type itf)
+        static string GetXmlRpcUri(Type itf)
         {
-            Attribute attr = Attribute.GetCustomAttribute(itf,
-              typeof(XmlRpcUrlAttribute));
+            var attr = Attribute.GetCustomAttribute(itf, typeof(XmlRpcUrlAttribute));
             if (attr == null)
                 return null;
-            XmlRpcUrlAttribute xruAttr = attr as XmlRpcUrlAttribute;
-            string url = xruAttr.Uri;
-            return url;
+
+            var xruAttr = attr as XmlRpcUrlAttribute;
+            return xruAttr.Uri;
         }
 
-        /// <summary>
-        /// Type.GetMethods() does not return methods that a derived interface
-        /// inherits from its base interfaces; this method does.
-        /// </summary>
-        static MethodInfo[] GetMethods(Type type)
+        static ArrayList GetXmlRpcMethods(Type serviceType)
         {
-            MethodInfo[] methods = type.GetMethods();
-            if (!type.IsInterface)
+            var xmlRpcMethods = new ArrayList();
+            foreach (var methodInfo in SystemHelper.GetMethods(serviceType))
             {
-                return methods;
-            }
-
-            Type[] interfaces = type.GetInterfaces();
-            if (interfaces.Length == 0)
-            {
-                return methods;
-            }
-
-            ArrayList result = new ArrayList(methods);
-            foreach (Type itf in type.GetInterfaces())
-            {
-                result.AddRange(itf.GetMethods());
-            }
-            return (MethodInfo[])result.ToArray(typeof(MethodInfo));
-        }
-
-        static ArrayList GetXmlRpcMethods(Type itf)
-        {
-            ArrayList ret = new ArrayList();
-            if (!itf.IsInterface)
-                throw new Exception("type not interface");
-            foreach (MethodInfo mi in GetMethods(itf))
-            {
-                string xmlRpcName = GetXmlRpcMethodName(mi);
-                if (xmlRpcName == null)
+                var xmlRpcName = GetXmlRpcMethodName(methodInfo);
+                if (string.IsNullOrWhiteSpace(xmlRpcName))
                     continue;
-                ParameterInfo[] pis = mi.GetParameters();
-                bool paramsMethod = pis.Length > 0 && Attribute.IsDefined(
-                  pis[^1], typeof(ParamArrayAttribute));
-                ret.Add(new MethodData(mi, xmlRpcName, paramsMethod));
+
+                var parameterInfos = methodInfo.GetParameters();
+                var hasParamsParameter = Attribute.IsDefined(parameterInfos[^1], typeof(ParamArrayAttribute));
+                var methodData = new MethodData(methodInfo, xmlRpcName, hasParamsParameter);
+
+                xmlRpcMethods.Add(methodData);
             }
-            return ret;
+
+            return xmlRpcMethods;
         }
 
-        static string GetXmlRpcMethodName(MethodInfo mi)
+        static string GetXmlRpcMethodName(MethodInfo methodInfo)
         {
-            Attribute attr = Attribute.GetCustomAttribute(mi,
-              typeof(XmlRpcMethodAttribute));
-            if (attr == null)
-                return null;
-            XmlRpcMethodAttribute xrmAttr = attr as XmlRpcMethodAttribute;
-            string rpcMethod = xrmAttr.Method;
-            if (rpcMethod == "")
-            {
-                rpcMethod = mi.Name;
-            }
-            return rpcMethod;
+            var attribute = Attribute.GetCustomAttribute(methodInfo, typeof(XmlRpcMethodAttribute));
+            if (attribute is XmlRpcMethodAttribute xmlAttribute)
+                return string.IsNullOrWhiteSpace(xmlAttribute.Method) ? methodInfo.Name : xmlAttribute.Method;
+
+            return null;
         }
 
-        class MethodData
+        static ArrayList GetXmlRpcBeginMethods(Type serviceType)
         {
-            public MethodData(MethodInfo Mi, string XmlRpcName, bool ParamsMethod)
-            {
-                mi = Mi;
-                xmlRpcName = XmlRpcName;
-                paramsMethod = ParamsMethod;
-                returnType = null;
-            }
-            public MethodData(MethodInfo Mi, string XmlRpcName, bool ParamsMethod,
-              Type ReturnType)
-            {
-                mi = Mi;
-                xmlRpcName = XmlRpcName;
-                paramsMethod = ParamsMethod;
-                returnType = ReturnType;
-            }
-            public MethodInfo mi;
-            public string xmlRpcName;
-            public Type returnType;
-            public bool paramsMethod;
-        }
+            const string beginStart = "Begin";
 
-        static ArrayList GetXmlRpcBeginMethods(Type itf)
-        {
-            ArrayList ret = new ArrayList();
-            if (!itf.IsInterface)
-                throw new Exception("type not interface");
-            foreach (MethodInfo mi in itf.GetMethods())
+            var beginMethods = new ArrayList();
+            foreach (var methodInfo in serviceType.GetMethods())
             {
-                Attribute attr = Attribute.GetCustomAttribute(mi,
-                  typeof(XmlRpcBeginAttribute));
-                if (attr == null)
+                var attribute = Attribute.GetCustomAttribute(methodInfo, typeof(XmlRpcBeginAttribute));
+                if (!(attribute is XmlRpcBeginAttribute rpcBeginAttribute))
                     continue;
-                string rpcMethod = ((XmlRpcBeginAttribute)attr).Method;
-                if (rpcMethod == "")
+
+                var rpcMethod = rpcBeginAttribute.Method;
+                if (string.IsNullOrWhiteSpace(rpcMethod))
                 {
-                    if (!mi.Name.StartsWith("Begin") || mi.Name.Length <= 5)
-                        throw new Exception(String.Format(
-                          "method {0} has invalid signature for begin method",
-                          mi.Name));
-                    rpcMethod = mi.Name.Substring(5);
+                    if (!methodInfo.Name.StartsWith(beginStart) || methodInfo.Name.Equals(beginStart, StringComparison.OrdinalIgnoreCase))
+                        throw new Exception($"method {methodInfo.Name} has invalid signature for begin method");
+
+                    rpcMethod = methodInfo.Name.Substring(beginStart.Length);
                 }
-                int paramCount = mi.GetParameters().Length;
-                int i;
-                for (i = 0; i < paramCount; i++)
+
+                var parameter = methodInfo.GetParameters();
+                var paramCount = parameter.Length;
+                var asyncParamPos = 0;
+
+                for (asyncParamPos = 0; asyncParamPos < paramCount; asyncParamPos++)
                 {
-                    Type paramType = mi.GetParameters()[0].ParameterType;
-                    if (paramType == typeof(System.AsyncCallback))
+                    if (parameter[asyncParamPos].ParameterType == typeof(AsyncCallback))
                         break;
                 }
-                if (paramCount > 1)
+
+                if (asyncParamPos < paramCount - 2)
+                    throw new Exception($"method {methodInfo.Name} has invalid signature for begin method");
+
+                if (asyncParamPos == paramCount - 2)
                 {
-                    if (i < paramCount - 2)
-                        throw new Exception(String.Format(
-                          "method {0} has invalid signature for begin method", mi.Name));
-                    if (i == (paramCount - 2))
-                    {
-                        Type paramType = mi.GetParameters()[i + 1].ParameterType;
-                        if (paramType != typeof(object))
-                            throw new Exception(string.Format(
-                              "method {0} has invalid signature for begin method",
-                              mi.Name));
-                    }
+                    var paramType = parameter[asyncParamPos + 1].ParameterType;
+                    if (paramType != typeof(object))
+                        throw new Exception($"method {methodInfo.Name} has invalid signature for begin method");
                 }
-                ret.Add(new MethodData(mi, rpcMethod, false, null));
+
+                beginMethods.Add(new MethodData(methodInfo, rpcMethod, false, null));
             }
-            return ret;
+
+            return beginMethods;
         }
 
-        static ArrayList GetXmlRpcEndMethods(Type itf)
+        static ArrayList GetXmlRpcEndMethods(Type serviceType)
         {
-            ArrayList ret = new ArrayList();
-            if (!itf.IsInterface)
-                throw new Exception("type not interface");
-            foreach (MethodInfo mi in itf.GetMethods())
+            var endMethods = new ArrayList();
+
+            var attributeMethods = serviceType.GetMethods().Where(m => Attribute.GetCustomAttribute(m, typeof(XmlRpcEndAttribute)) is XmlRpcEndAttribute);
+            foreach (var methodInfo in attributeMethods)
             {
-                Attribute attr = Attribute.GetCustomAttribute(mi,
-                  typeof(XmlRpcEndAttribute));
-                if (attr == null)
-                    continue;
-                ParameterInfo[] pis = mi.GetParameters();
-                if (pis.Length != 1)
-                    throw new Exception(String.Format(
-                      "method {0} has invalid signature for end method", mi.Name));
-                Type paramType = pis[0].ParameterType;
-                if (paramType != typeof(System.IAsyncResult))
-                    throw new Exception(String.Format(
-                      "method {0} has invalid signature for end method", mi.Name));
-                ret.Add(new MethodData(mi, "", false));
+                var parameterInfo = methodInfo.GetParameters();
+                if (parameterInfo.Length != 1 || parameterInfo[0].ParameterType == typeof(IAsyncResult))
+                    throw new Exception($"method {methodInfo.Name} has invalid signature for end method");
+
+                endMethods.Add(new MethodData(methodInfo, string.Empty, false));
             }
-            return ret;
+
+            return endMethods;
         }
     }
 }

@@ -2,6 +2,18 @@ using System;
 
 namespace XmlRpc.Client.Exceptions
 {
+    public class XmlRpcServiceIsNoInterfaceException : XmlRpcException
+    {
+        public XmlRpcServiceIsNoInterfaceException() { }
+        public XmlRpcServiceIsNoInterfaceException(string msg) : base(msg) { }
+    }
+
+    public class XmlRpcServiceInterfaceNotImplementedException : XmlRpcException
+    {
+        public XmlRpcServiceInterfaceNotImplementedException() { }
+        public XmlRpcServiceInterfaceNotImplementedException(string msg) : base(msg) { }
+    }
+
     public class XmlRpcException : ApplicationException
     {
         public XmlRpcException() { }
