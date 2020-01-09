@@ -10,6 +10,8 @@ using XmlRpc.Client.Attributes;
 using XmlRpc.Client.Exceptions;
 using XmlRpc.Client.Model;
 using XmlRpc.Client.Serializer;
+using XmlRpc.Client.Serializer.Request;
+using XmlRpc.Client.Serializer.Response;
 
 namespace XmlRpc.Client
 {

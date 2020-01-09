@@ -8,8 +8,9 @@ using XmlRpc.Client.DataTypes;
 using XmlRpc.Client.Exceptions;
 using XmlRpc.Client.Model;
 using XmlRpc.Client.Serializer.Extensions;
+using XmlRpc.Client.Serializer.Model;
 
-namespace XmlRpc.Client.Serializer
+namespace XmlRpc.Client.Serializer.Parser
 {
     class XmlParser
     {

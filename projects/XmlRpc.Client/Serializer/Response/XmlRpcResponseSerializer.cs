@@ -3,7 +3,7 @@ using System.Xml;
 using XmlRpc.Client.Exceptions;
 using XmlRpc.Client.Model;
 
-namespace XmlRpc.Client.Serializer
+namespace XmlRpc.Client.Serializer.Response
 {
     public class XmlRpcResponseSerializer : XmlRpcSerializer
     {

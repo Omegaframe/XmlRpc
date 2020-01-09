@@ -2,7 +2,7 @@
 using System.Xml;
 using XmlRpc.Client.Model;
 
-namespace XmlRpc.Client.Serializer
+namespace XmlRpc.Client.Serializer.Model
 {
     public class SerializerConfig
     {

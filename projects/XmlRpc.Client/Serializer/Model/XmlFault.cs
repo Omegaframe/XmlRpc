@@ -1,4 +1,4 @@
-﻿namespace XmlRpc.Client.Serializer
+﻿namespace XmlRpc.Client.Serializer.Model
 {
     class XmlFault
     {

@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Text;
 
-namespace XmlRpc.Client.Serializer
+namespace XmlRpc.Client.Serializer.Model
 {
     public class ParseStack : Stack
     {

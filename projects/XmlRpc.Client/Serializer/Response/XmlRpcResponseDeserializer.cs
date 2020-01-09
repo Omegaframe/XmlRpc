@@ -4,8 +4,10 @@ using System.Xml;
 using XmlRpc.Client.Exceptions;
 using XmlRpc.Client.Model;
 using XmlRpc.Client.Serializer.Extensions;
+using XmlRpc.Client.Serializer.Model;
+using XmlRpc.Client.Serializer.Parser;
 
-namespace XmlRpc.Client.Serializer
+namespace XmlRpc.Client.Serializer.Response
 {
     public class XmlRpcResponseDeserializer : XmlRpcSerializer
     {

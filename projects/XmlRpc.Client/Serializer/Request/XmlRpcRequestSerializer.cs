@@ -7,7 +7,7 @@ using XmlRpc.Client.Attributes;
 using XmlRpc.Client.Exceptions;
 using XmlRpc.Client.Model;
 
-namespace XmlRpc.Client.Serializer
+namespace XmlRpc.Client.Serializer.Request
 {
     public class XmlRpcRequestSerializer : XmlRpcSerializer
     {
