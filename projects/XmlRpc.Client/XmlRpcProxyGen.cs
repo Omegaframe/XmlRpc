@@ -83,13 +83,13 @@ namespace XmlRpc.Client
                     paramNames[i] = parameters[i].Name;
                 }
 
-                var mattr = (XmlRpcMethodAttribute)Attribute.GetCustomAttribute(methodInfo, typeof(XmlRpcMethodAttribute));
-                BuildMethod(typeBuilder, methodInfo.Name, method.XmlRpcName, paramNames, argTypes, method.IsParamsMethod, methodInfo.ReturnType, mattr.StructParams);
+                var methodAttribute = (XmlRpcMethodAttribute)Attribute.GetCustomAttribute(methodInfo, typeof(XmlRpcMethodAttribute));
+                BuildMethod(typeBuilder, methodInfo.Name, method.XmlRpcName, paramNames, argTypes, method.IsParamsMethod, methodInfo.ReturnType, methodAttribute.StructParams);
             }
         }
 
         static void BuildMethod(
-          TypeBuilder tb,
+          TypeBuilder typeBuilder,
           string methodName,
           string rpcMethodName,
           string[] paramNames,
@@ -98,251 +98,233 @@ namespace XmlRpc.Client
           Type returnType,
           bool structParams)
         {
-            MethodBuilder mthdBldr = tb.DefineMethod(
-              methodName,
-              MethodAttributes.Public | MethodAttributes.Virtual,
-              returnType, argTypes);
-            // add attribute to method
-            Type[] oneString = new Type[1] { typeof(string) };
-            Type methodAttr = typeof(XmlRpcMethodAttribute);
-            ConstructorInfo ci = methodAttr.GetConstructor(oneString);
-            PropertyInfo[] pis
-              = new PropertyInfo[] { methodAttr.GetProperty("StructParams") };
-            object[] structParam = new object[] { structParams };
-            CustomAttributeBuilder cab =
-              new CustomAttributeBuilder(ci, new object[] { rpcMethodName },
-                pis, structParam);
-            mthdBldr.SetCustomAttribute(cab);
+            var methodBuilder = typeBuilder.DefineMethod(methodName, MethodAttributes.Public | MethodAttributes.Virtual, returnType, argTypes);
+
+            var stringType = new[] { typeof(string) };
+            var methodAttribute = typeof(XmlRpcMethodAttribute);
+            var construtorInfo = methodAttribute.GetConstructor(stringType);
+            var protertyInfos = new[] { methodAttribute.GetProperty("StructParams") };
+            var structParamArray = new object[] { structParams };
+            var attributeBuilder = new CustomAttributeBuilder(construtorInfo, new object[] { rpcMethodName }, protertyInfos, structParamArray);
+            methodBuilder.SetCustomAttribute(attributeBuilder);
+
             for (int i = 0; i < paramNames.Length; i++)
             {
-                ParameterBuilder paramBldr = mthdBldr.DefineParameter(i + 1,
-                  ParameterAttributes.In, paramNames[i]);
-                // possibly add ParamArrayAttribute to final parameter
+                var paramBuilder = methodBuilder.DefineParameter(i + 1, ParameterAttributes.In, paramNames[i]);
+
                 if (i == paramNames.Length - 1 && paramsMethod)
                 {
-                    ConstructorInfo ctorInfo = typeof(ParamArrayAttribute).GetConstructor(
-                      new Type[0]);
-                    CustomAttributeBuilder attrBldr =
-                      new CustomAttributeBuilder(ctorInfo, new object[0]);
-                    paramBldr.SetCustomAttribute(attrBldr);
+                    var paramContructor = typeof(ParamArrayAttribute).GetConstructor(new Type[0]);
+                    var paramAttributeBuilder = new CustomAttributeBuilder(paramContructor, new object[0]);
+                    paramBuilder.SetCustomAttribute(paramAttributeBuilder);
                 }
             }
-            // generate IL
-            ILGenerator ilgen = mthdBldr.GetILGenerator();
-            // if non-void return, declared locals for processing return value
-            LocalBuilder retVal = null;
-            LocalBuilder tempRetVal = null;
+
+            var ilGenerator = methodBuilder.GetILGenerator();
+            LocalBuilder returnValue = null;
+            LocalBuilder tempReturnValue = null;
             if (typeof(void) != returnType)
             {
-                tempRetVal = ilgen.DeclareLocal(typeof(object));
-                retVal = ilgen.DeclareLocal(returnType);
+                tempReturnValue = ilGenerator.DeclareLocal(typeof(object));
+                returnValue = ilGenerator.DeclareLocal(returnType);
             }
-            // declare variable to store method args and emit code to populate ut
-            LocalBuilder argValues = ilgen.DeclareLocal(typeof(object[]));
-            ilgen.Emit(OpCodes.Ldc_I4, argTypes.Length);
-            ilgen.Emit(OpCodes.Newarr, typeof(object));
-            ilgen.Emit(OpCodes.Stloc, argValues);
-            for (int argLoad = 0; argLoad < argTypes.Length; argLoad++)
+
+            var argValues = ilGenerator.DeclareLocal(typeof(object[]));
+            ilGenerator.Emit(OpCodes.Ldc_I4, argTypes.Length);
+            ilGenerator.Emit(OpCodes.Newarr, typeof(object));
+            ilGenerator.Emit(OpCodes.Stloc, argValues);
+            for (var argLoad = 0; argLoad < argTypes.Length; argLoad++)
             {
-                ilgen.Emit(OpCodes.Ldloc, argValues);
-                ilgen.Emit(OpCodes.Ldc_I4, argLoad);
-                ilgen.Emit(OpCodes.Ldarg, argLoad + 1);
+                ilGenerator.Emit(OpCodes.Ldloc, argValues);
+                ilGenerator.Emit(OpCodes.Ldc_I4, argLoad);
+                ilGenerator.Emit(OpCodes.Ldarg, argLoad + 1);
+
                 if (argTypes[argLoad].IsValueType)
-                {
-                    ilgen.Emit(OpCodes.Box, argTypes[argLoad]);
-                }
-                ilgen.Emit(OpCodes.Stelem_Ref);
+                    ilGenerator.Emit(OpCodes.Box, argTypes[argLoad]);
+
+                ilGenerator.Emit(OpCodes.Stelem_Ref);
             }
-            // call Invoke on base class
-            Type[] invokeTypes = new Type[] { typeof(MethodInfo), typeof(object[]) };
-            MethodInfo invokeMethod
-              = typeof(XmlRpcClientProtocol).GetMethod("Invoke", invokeTypes);
-            ilgen.Emit(OpCodes.Ldarg_0);
-            ilgen.Emit(OpCodes.Call, typeof(MethodBase).GetMethod("GetCurrentMethod"));
-            ilgen.Emit(OpCodes.Castclass, typeof(System.Reflection.MethodInfo));
-            ilgen.Emit(OpCodes.Ldloc, argValues);
-            ilgen.Emit(OpCodes.Call, invokeMethod);
-            //  if non-void return prepare return value, otherwise pop to discard 
+
+            var invokeTypes = new Type[] { typeof(MethodInfo), typeof(object[]) };
+            var invokeMethod = typeof(XmlRpcClientProtocol).GetMethod("Invoke", invokeTypes);
+            ilGenerator.Emit(OpCodes.Ldarg_0);
+            ilGenerator.Emit(OpCodes.Call, typeof(MethodBase).GetMethod("GetCurrentMethod"));
+            ilGenerator.Emit(OpCodes.Castclass, typeof(MethodInfo));
+            ilGenerator.Emit(OpCodes.Ldloc, argValues);
+            ilGenerator.Emit(OpCodes.Call, invokeMethod);
+
             if (typeof(void) != returnType)
             {
-                // if return value is null, don't cast it to required type
-                Label retIsNull = ilgen.DefineLabel();
-                ilgen.Emit(OpCodes.Stloc, tempRetVal);
-                ilgen.Emit(OpCodes.Ldloc, tempRetVal);
-                ilgen.Emit(OpCodes.Brfalse, retIsNull);
-                ilgen.Emit(OpCodes.Ldloc, tempRetVal);
+                var retIsNull = ilGenerator.DefineLabel();
+                ilGenerator.Emit(OpCodes.Stloc, tempReturnValue);
+                ilGenerator.Emit(OpCodes.Ldloc, tempReturnValue);
+                ilGenerator.Emit(OpCodes.Brfalse, retIsNull);
+                ilGenerator.Emit(OpCodes.Ldloc, tempReturnValue);
                 if (true == returnType.IsValueType)
                 {
-                    ilgen.Emit(OpCodes.Unbox, returnType);
-                    ilgen.Emit(OpCodes.Ldobj, returnType);
+                    ilGenerator.Emit(OpCodes.Unbox, returnType);
+                    ilGenerator.Emit(OpCodes.Ldobj, returnType);
                 }
                 else
                 {
-                    ilgen.Emit(OpCodes.Castclass, returnType);
+                    ilGenerator.Emit(OpCodes.Castclass, returnType);
                 }
-                ilgen.Emit(OpCodes.Stloc, retVal);
-                ilgen.MarkLabel(retIsNull);
-                ilgen.Emit(OpCodes.Ldloc, retVal);
+                ilGenerator.Emit(OpCodes.Stloc, returnValue);
+                ilGenerator.MarkLabel(retIsNull);
+                ilGenerator.Emit(OpCodes.Ldloc, returnValue);
             }
             else
             {
-                ilgen.Emit(OpCodes.Pop);
+                ilGenerator.Emit(OpCodes.Pop);
             }
-            ilgen.Emit(OpCodes.Ret);
+
+            ilGenerator.Emit(OpCodes.Ret);
         }
 
-        static void BuildBeginMethods(TypeBuilder tb, ArrayList methods)
+        static void BuildBeginMethods(TypeBuilder typeBuilder, MethodData[] methods)
         {
-            foreach (MethodData mthdData in methods)
+            foreach (var methodData in methods)
             {
-                MethodInfo mi = mthdData.MethodInfo;
-                // assume method has already been validated for required signature   
-                int paramCount = mi.GetParameters().Length;
-                // argCount counts of params before optional AsyncCallback param
-                int argCount = paramCount;
-                Type[] argTypes = new Type[paramCount];
-                for (int i = 0; i < mi.GetParameters().Length; i++)
+                var methodInfo = methodData.MethodInfo;
+                var parameters = methodInfo.GetParameters();
+                var paramCount = parameters.Length;
+                var argCount = paramCount;
+                var argTypes = new Type[paramCount];
+
+                for (int i = 0; i < parameters.Length; i++)
                 {
-                    argTypes[i] = mi.GetParameters()[i].ParameterType;
-                    if (argTypes[i] == typeof(System.AsyncCallback))
+                    argTypes[i] = parameters[i].ParameterType;
+                    if (argTypes[i] == typeof(AsyncCallback))
                         argCount = i;
                 }
-                MethodBuilder mthdBldr = tb.DefineMethod(
-                  mi.Name,
-                  MethodAttributes.Public | MethodAttributes.Virtual,
-                  mi.ReturnType,
-                  argTypes);
-                // add attribute to method
-                Type[] oneString = new Type[1] { typeof(string) };
-                Type methodAttr = typeof(XmlRpcBeginAttribute);
-                ConstructorInfo ci = methodAttr.GetConstructor(oneString);
-                CustomAttributeBuilder cab =
-                  new CustomAttributeBuilder(ci, new object[] { mthdData.XmlRpcName });
-                mthdBldr.SetCustomAttribute(cab);
-                // start generating IL
-                ILGenerator ilgen = mthdBldr.GetILGenerator();
-                // declare variable to store method args and emit code to populate it
-                LocalBuilder argValues = ilgen.DeclareLocal(typeof(object[]));
-                ilgen.Emit(OpCodes.Ldc_I4, argCount);
-                ilgen.Emit(OpCodes.Newarr, typeof(object));
-                ilgen.Emit(OpCodes.Stloc, argValues);
+
+                var methodBuilder = typeBuilder.DefineMethod(methodInfo.Name, MethodAttributes.Public | MethodAttributes.Virtual, methodInfo.ReturnType, argTypes);
+
+                var stringType = new[] { typeof(string) };
+                var methodAttribute = typeof(XmlRpcBeginAttribute);
+                var constructorInfo = methodAttribute.GetConstructor(stringType);
+                var attributeBuilder = new CustomAttributeBuilder(constructorInfo, new object[] { methodData.XmlRpcName });
+                methodBuilder.SetCustomAttribute(attributeBuilder);
+
+
+                var ilGenerator = methodBuilder.GetILGenerator();
+                var argValues = ilGenerator.DeclareLocal(typeof(object[]));
+                ilGenerator.Emit(OpCodes.Ldc_I4, argCount);
+                ilGenerator.Emit(OpCodes.Newarr, typeof(object));
+                ilGenerator.Emit(OpCodes.Stloc, argValues);
+
                 for (int argLoad = 0; argLoad < argCount; argLoad++)
                 {
-                    ilgen.Emit(OpCodes.Ldloc, argValues);
-                    ilgen.Emit(OpCodes.Ldc_I4, argLoad);
-                    ilgen.Emit(OpCodes.Ldarg, argLoad + 1);
-                    ParameterInfo pi = mi.GetParameters()[argLoad];
-                    string paramTypeName = pi.ParameterType.AssemblyQualifiedName;
+                    ilGenerator.Emit(OpCodes.Ldloc, argValues);
+                    ilGenerator.Emit(OpCodes.Ldc_I4, argLoad);
+                    ilGenerator.Emit(OpCodes.Ldarg, argLoad + 1);
+
+                    var parameterInfos = parameters[argLoad];
+                    var paramTypeName = parameterInfos.ParameterType.AssemblyQualifiedName;
                     paramTypeName = paramTypeName.Replace("&", "");
-                    Type paramType = Type.GetType(paramTypeName);
+                    var paramType = Type.GetType(paramTypeName);
+
                     if (paramType.IsValueType)
-                    {
-                        ilgen.Emit(OpCodes.Box, paramType);
-                    }
-                    ilgen.Emit(OpCodes.Stelem_Ref);
+                        ilGenerator.Emit(OpCodes.Box, paramType);
+
+                    ilGenerator.Emit(OpCodes.Stelem_Ref);
                 }
-                // emit code to store AsyncCallback parameter, defaulting to null 
-                // if not in method signature
-                LocalBuilder acbValue = ilgen.DeclareLocal(typeof(System.AsyncCallback));
+
+                var asyncCallback = ilGenerator.DeclareLocal(typeof(AsyncCallback));
                 if (argCount < paramCount)
                 {
-                    ilgen.Emit(OpCodes.Ldarg, argCount + 1);
-                    ilgen.Emit(OpCodes.Stloc, acbValue);
+                    ilGenerator.Emit(OpCodes.Ldarg, argCount + 1);
+                    ilGenerator.Emit(OpCodes.Stloc, asyncCallback);
                 }
-                // emit code to store async state parameter, defaulting to null 
-                // if not in method signature
-                LocalBuilder objValue = ilgen.DeclareLocal(typeof(object));
+
+                var objValue = ilGenerator.DeclareLocal(typeof(object));
                 if (argCount < (paramCount - 1))
                 {
-                    ilgen.Emit(OpCodes.Ldarg, argCount + 2);
-                    ilgen.Emit(OpCodes.Stloc, objValue);
+                    ilGenerator.Emit(OpCodes.Ldarg, argCount + 2);
+                    ilGenerator.Emit(OpCodes.Stloc, objValue);
                 }
-                // emit code to call BeginInvoke on base class
-                Type[] invokeTypes = new Type[]
-              {
-        typeof(MethodInfo),
-        typeof(object[]),
-        typeof(object),
-        typeof(AsyncCallback),
-        typeof(object)
-              };
-                MethodInfo invokeMethod
-                  = typeof(XmlRpcClientProtocol).GetMethod("BeginInvoke", invokeTypes);
-                ilgen.Emit(OpCodes.Ldarg_0);
-                ilgen.Emit(OpCodes.Call, typeof(MethodBase).GetMethod("GetCurrentMethod"));
-                ilgen.Emit(OpCodes.Castclass, typeof(System.Reflection.MethodInfo));
-                ilgen.Emit(OpCodes.Ldloc, argValues);
-                ilgen.Emit(OpCodes.Ldarg_0);
-                ilgen.Emit(OpCodes.Ldloc, acbValue);
-                ilgen.Emit(OpCodes.Ldloc, objValue);
-                ilgen.Emit(OpCodes.Call, invokeMethod);
-                // BeginInvoke will leave IAsyncResult on stack - leave it there
-                // for return value from method being built
-                ilgen.Emit(OpCodes.Ret);
+
+                var invokeTypes = new Type[]
+                {
+                    typeof(MethodInfo),
+                    typeof(object[]),
+                    typeof(object),
+                    typeof(AsyncCallback),
+                    typeof(object)
+                };
+
+                var invokeMethod = typeof(XmlRpcClientProtocol).GetMethod("BeginInvoke", invokeTypes);
+                ilGenerator.Emit(OpCodes.Ldarg_0);
+                ilGenerator.Emit(OpCodes.Call, typeof(MethodBase).GetMethod("GetCurrentMethod"));
+                ilGenerator.Emit(OpCodes.Castclass, typeof(MethodInfo));
+                ilGenerator.Emit(OpCodes.Ldloc, argValues);
+                ilGenerator.Emit(OpCodes.Ldarg_0);
+                ilGenerator.Emit(OpCodes.Ldloc, asyncCallback);
+                ilGenerator.Emit(OpCodes.Ldloc, objValue);
+                ilGenerator.Emit(OpCodes.Call, invokeMethod);
+
+                ilGenerator.Emit(OpCodes.Ret);
             }
         }
 
-        static void BuildEndMethods(TypeBuilder tb, ArrayList methods)
+        static void BuildEndMethods(TypeBuilder tb, MethodData[] methods)
         {
-            LocalBuilder retVal = null;
-            LocalBuilder tempRetVal = null;
-            foreach (MethodData mthdData in methods)
+            LocalBuilder returnValue = null;
+            LocalBuilder tempReturnValue = null;
+
+            foreach (var methodData in methods)
             {
-                MethodInfo mi = mthdData.MethodInfo;
-                Type[] argTypes = new Type[] { typeof(System.IAsyncResult) };
-                MethodBuilder mthdBldr = tb.DefineMethod(mi.Name,
-                  MethodAttributes.Public | MethodAttributes.Virtual,
-                  mi.ReturnType, argTypes);
-                // start generating IL
-                ILGenerator ilgen = mthdBldr.GetILGenerator();
-                // if non-void return, declared locals for processing return value
-                if (typeof(void) != mi.ReturnType)
+                var methodInfo = methodData.MethodInfo;
+                var argTypes = new Type[] { typeof(IAsyncResult) };
+                var methodBuilder = tb.DefineMethod(methodInfo.Name, MethodAttributes.Public | MethodAttributes.Virtual, methodInfo.ReturnType, argTypes);
+
+                var ilGenerator = methodBuilder.GetILGenerator();
+
+                if (typeof(void) != methodInfo.ReturnType)
                 {
-                    tempRetVal = ilgen.DeclareLocal(typeof(object));
-                    retVal = ilgen.DeclareLocal(mi.ReturnType);
+                    tempReturnValue = ilGenerator.DeclareLocal(typeof(object));
+                    returnValue = ilGenerator.DeclareLocal(methodInfo.ReturnType);
                 }
-                // call EndInvoke on base class
-                Type[] invokeTypes
-                  = new Type[] { typeof(System.IAsyncResult), typeof(System.Type) };
-                MethodInfo invokeMethod
-                  = typeof(XmlRpcClientProtocol).GetMethod("EndInvoke", invokeTypes);
-                Type[] GetTypeTypes
-                  = new Type[] { typeof(System.String) };
-                MethodInfo GetTypeMethod
-                  = typeof(System.Type).GetMethod("GetType", GetTypeTypes);
-                ilgen.Emit(OpCodes.Ldarg_0);  // "this"
-                ilgen.Emit(OpCodes.Ldarg_1);  // IAsyncResult parameter
-                ilgen.Emit(OpCodes.Ldstr, mi.ReturnType.AssemblyQualifiedName);
-                ilgen.Emit(OpCodes.Call, GetTypeMethod);
-                ilgen.Emit(OpCodes.Call, invokeMethod);
-                //  if non-void return prepare return value otherwise pop to discard 
-                if (typeof(void) != mi.ReturnType)
+
+                var invokeTypes = new Type[] { typeof(IAsyncResult), typeof(Type) };
+                var invokeMethod = typeof(XmlRpcClientProtocol).GetMethod("EndInvoke", invokeTypes);
+                var getTypeTypes = new Type[] { typeof(string) };
+                var getTypeMethod = typeof(Type).GetMethod("GetType", getTypeTypes);
+
+                ilGenerator.Emit(OpCodes.Ldarg_0);
+                ilGenerator.Emit(OpCodes.Ldarg_1);
+                ilGenerator.Emit(OpCodes.Ldstr, methodInfo.ReturnType.AssemblyQualifiedName);
+                ilGenerator.Emit(OpCodes.Call, getTypeMethod);
+                ilGenerator.Emit(OpCodes.Call, invokeMethod);
+
+                if (typeof(void) != methodInfo.ReturnType)
                 {
-                    // if return value is null, don't cast it to required type
-                    Label retIsNull = ilgen.DefineLabel();
-                    ilgen.Emit(OpCodes.Stloc, tempRetVal);
-                    ilgen.Emit(OpCodes.Ldloc, tempRetVal);
-                    ilgen.Emit(OpCodes.Brfalse, retIsNull);
-                    ilgen.Emit(OpCodes.Ldloc, tempRetVal);
-                    if (true == mi.ReturnType.IsValueType)
+                    var retIsNull = ilGenerator.DefineLabel();
+                    ilGenerator.Emit(OpCodes.Stloc, tempReturnValue);
+                    ilGenerator.Emit(OpCodes.Ldloc, tempReturnValue);
+                    ilGenerator.Emit(OpCodes.Brfalse, retIsNull);
+                    ilGenerator.Emit(OpCodes.Ldloc, tempReturnValue);
+
+                    if (true == methodInfo.ReturnType.IsValueType)
                     {
-                        ilgen.Emit(OpCodes.Unbox, mi.ReturnType);
-                        ilgen.Emit(OpCodes.Ldobj, mi.ReturnType);
+                        ilGenerator.Emit(OpCodes.Unbox, methodInfo.ReturnType);
+                        ilGenerator.Emit(OpCodes.Ldobj, methodInfo.ReturnType);
                     }
                     else
                     {
-                        ilgen.Emit(OpCodes.Castclass, mi.ReturnType);
+                        ilGenerator.Emit(OpCodes.Castclass, methodInfo.ReturnType);
                     }
-                    ilgen.Emit(OpCodes.Stloc, retVal);
-                    ilgen.MarkLabel(retIsNull);
-                    ilgen.Emit(OpCodes.Ldloc, retVal);
+
+                    ilGenerator.Emit(OpCodes.Stloc, returnValue);
+                    ilGenerator.MarkLabel(retIsNull);
+                    ilGenerator.Emit(OpCodes.Ldloc, returnValue);
                 }
                 else
                 {
-                    // void method so throw away result from EndInvoke
-                    ilgen.Emit(OpCodes.Pop);
+                    ilGenerator.Emit(OpCodes.Pop);
                 }
-                ilgen.Emit(OpCodes.Ret);
+
+                ilGenerator.Emit(OpCodes.Ret);
             }
         }
 
@@ -351,10 +333,10 @@ namespace XmlRpc.Client
             var ctorInfo = baseType.GetConstructor(Type.EmptyTypes);
             var ctorBuilder = typeBuilder.DefineConstructor(
                 MethodAttributes.Public |
-                MethodAttributes.SpecialName | 
+                MethodAttributes.SpecialName |
                 MethodAttributes.RTSpecialName |
-                MethodAttributes.HideBySig, 
-                CallingConventions.Standard, 
+                MethodAttributes.HideBySig,
+                CallingConventions.Standard,
                 Type.EmptyTypes);
 
             if (!string.IsNullOrWhiteSpace(url))
@@ -411,11 +393,11 @@ namespace XmlRpc.Client
             return null;
         }
 
-        static ArrayList GetXmlRpcBeginMethods(Type serviceType)
+        static MethodData[] GetXmlRpcBeginMethods(Type serviceType)
         {
             const string beginStart = "Begin";
 
-            var beginMethods = new ArrayList();
+            var beginMethods = new List<MethodData>();
             foreach (var methodInfo in serviceType.GetMethods())
             {
                 var attribute = Attribute.GetCustomAttribute(methodInfo, typeof(XmlRpcBeginAttribute));
@@ -454,12 +436,12 @@ namespace XmlRpc.Client
                 beginMethods.Add(new MethodData(methodInfo, rpcMethod, false, null));
             }
 
-            return beginMethods;
+            return beginMethods.ToArray();
         }
 
-        static ArrayList GetXmlRpcEndMethods(Type serviceType)
+        static MethodData[] GetXmlRpcEndMethods(Type serviceType)
         {
-            var endMethods = new ArrayList();
+            var endMethods = new List<MethodData>();
 
             var attributeMethods = serviceType.GetMethods().Where(m => Attribute.GetCustomAttribute(m, typeof(XmlRpcEndAttribute)) is XmlRpcEndAttribute);
             foreach (var methodInfo in attributeMethods)
@@ -471,7 +453,7 @@ namespace XmlRpc.Client
                 endMethods.Add(new MethodData(methodInfo, string.Empty, false));
             }
 
-            return endMethods;
+            return endMethods.ToArray();
         }
     }
 }
