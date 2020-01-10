@@ -16,17 +16,11 @@ namespace XmlRpc.Client
         {
             get
             {
-                var completed = IsCompleted;
                 if (manualResetEvent == null)
                 {
                     lock (this)
-                    {
-                        if (manualResetEvent == null)
-                            manualResetEvent = new ManualResetEvent(completed);
-                    }
+                        manualResetEvent = new ManualResetEvent(IsCompleted);
                 }
-                if (!completed && IsCompleted)
-                    manualResetEvent.Set();
 
                 return manualResetEvent;
             }
@@ -58,11 +52,7 @@ namespace XmlRpc.Client
 
         public bool UseStringTag { get; }
 
-        public void Abort()
-        {
-            if (Request != null)
-                Request.Abort();
-        }
+        public void Abort() => Request?.Abort();
 
         public Exception Exception { get; private set; }
 
@@ -105,11 +95,8 @@ namespace XmlRpc.Client
         {
             try
             {
-                if (ResponseStream != null)
-                {
-                    ResponseStream.Close();
-                    ResponseStream = null;
-                }
+                ResponseStream?.Close();
+                ResponseStream = null;
 
                 if (ResponseBufferedStream != null)
                     ResponseBufferedStream.Position = 0;
@@ -124,8 +111,7 @@ namespace XmlRpc.Client
 
             try
             {
-                if (manualResetEvent != null)
-                    manualResetEvent.Set();
+                manualResetEvent?.Set();
             }
             catch (Exception ex)
             {
