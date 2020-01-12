@@ -60,7 +60,7 @@ namespace XmlRpc.Client
 
         internal XmlRpcAsyncResult(
           XmlRpcClientProtocol clientProtocol,
-            XmlRpcRequest XmlRpcReq,
+            XmlRpcRequest rpcRequest,
             Encoding xmlEncoding,
             bool useEmptyParamsTag,
             bool useIndentation,
@@ -68,14 +68,14 @@ namespace XmlRpc.Client
             bool useIntTag,
             bool useStringTag,
             WebRequest request,
-            AsyncCallback UserCallback,
-            object UserAsyncState)
+            AsyncCallback userCallback,
+            object userAsyncState)
         {
-            XmlRpcRequest = XmlRpcReq;
+            XmlRpcRequest = rpcRequest;
             ClientProtocol = clientProtocol;
             Request = request;
-            AsyncState = UserAsyncState;
-            userCallback = UserCallback;
+            AsyncState = userAsyncState;
+            this.userCallback = userCallback;
             completedSynchronously = true;
             XmlEncoding = xmlEncoding;
             UseEmptyParamsTag = useEmptyParamsTag;

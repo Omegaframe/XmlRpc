@@ -2,56 +2,51 @@ using System;
 using System.ComponentModel;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Net.Mime;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using XmlRpc.Client.Attributes;
 using XmlRpc.Client.Exceptions;
 using XmlRpc.Client.Model;
-using XmlRpc.Client.Serializer;
 using XmlRpc.Client.Serializer.Request;
 using XmlRpc.Client.Serializer.Response;
 
 namespace XmlRpc.Client
 {
-    public class XmlRpcClientProtocol : Component, IXmlRpcProxy
+    // todo: avoid own handling of streams etc.
+    public class XmlRpcClientProtocol : IXmlRpcProxy
     {
-        Guid _id = Guid.NewGuid();
-
-        public XmlRpcClientProtocol(IContainer container)
-        {
-            container.Add(this);
-            InitializeComponent();
-        }
-
         public XmlRpcClientProtocol()
         {
-            InitializeComponent();
+            Id = Guid.NewGuid();
         }
 
-        public object Invoke(MethodBase mb, params object[] Parameters)
+        public object Invoke(MethodBase methodBase, params object[] parameters)
         {
-            return Invoke(this, mb as MethodInfo, Parameters);
+            return Invoke(this, methodBase as MethodInfo, parameters);
         }
 
-        public object Invoke(MethodInfo mi, params object[] Parameters)
+        public object Invoke(MethodInfo methodInfo, params object[] parameters)
         {
-            return Invoke(this, mi, Parameters);
+            return Invoke(this, methodInfo, parameters);
         }
 
-        public object Invoke(string MethodName, params object[] Parameters)
+        public object Invoke(string methodName, params object[] parameters)
         {
-            return Invoke(this, MethodName, Parameters);
+            return Invoke(this, methodName, parameters);
         }
 
         public object Invoke(object clientObj, string methodName, params object[] parameters)
         {
-            var mi = GetMethodInfoFromName(clientObj, methodName, parameters);
-            return Invoke(this, mi, parameters);
+            var methodInfo = GetMethodInfoFromName(clientObj, methodName, parameters);
+            return Invoke(this, methodInfo, parameters);
         }
 
-        public object Invoke(object clientObj, MethodInfo mi, params object[] parameters)
+        public object Invoke(object clientObj, MethodInfo methodInfo, params object[] parameters)
         {
             ResponseHeaders = null;
             ResponseCookies = null;
@@ -62,7 +57,7 @@ namespace XmlRpc.Client
             {
                 var useUrl = GetEffectiveUrl(clientObj);
                 webReq = GetWebRequest(new Uri(useUrl));
-                var req = MakeXmlRpcRequest(webReq, mi, parameters, clientObj, XmlRpcMethod, _id);
+                var req = MakeXmlRpcRequest(webReq, methodInfo, parameters, XmlRpcMethod);
 
                 SetProperties(webReq);
                 SetRequestHeaders(Headers, webReq);
@@ -176,7 +171,7 @@ namespace XmlRpc.Client
 
         public CookieContainer CookieContainer { get; } = new CookieContainer();
 
-        public Guid Id => _id;
+        public Guid Id { get; }
 
         public int Indentation { get; set; } = 2;
 
@@ -253,28 +248,19 @@ namespace XmlRpc.Client
             }
         }
 
-        XmlRpcRequest MakeXmlRpcRequest(
-            WebRequest webReq,
-            MethodInfo mi,
-            object[] parameters,
-            object clientObj,
-            string xmlRpcMethod,
-            Guid proxyId)
+        XmlRpcRequest MakeXmlRpcRequest(WebRequest webRequest, MethodInfo methodInfo, object[] parameters, string xmlRpcMethod)
         {
-            webReq.Method = "POST";
-            webReq.ContentType = "text/xml";
-            string rpcMethodName = GetRpcMethodName(mi);
-            var req = new XmlRpcRequest(rpcMethodName, parameters, mi, xmlRpcMethod, proxyId);
-            return req;
+            var rpcMethodName = GetRpcMethodName(methodInfo);
+
+            webRequest.Method = HttpMethod.Post.Method;
+            webRequest.ContentType = MediaTypeNames.Text.Xml;
+
+            return new XmlRpcRequest(rpcMethodName, parameters, methodInfo, xmlRpcMethod, Id);
         }
 
-        XmlRpcResponse ReadResponse(
-          XmlRpcRequest req,
-          WebResponse webResp,
-          Stream respStm,
-          Type returnType)
+        XmlRpcResponse ReadResponse(XmlRpcRequest request, WebResponse webResponse, Stream responseStream, Type returnType)
         {
-            var httpResp = (HttpWebResponse)webResp;
+            var httpResp = (HttpWebResponse)webResponse;
             if (httpResp.StatusCode != HttpStatusCode.OK)
             {
                 if (httpResp.StatusCode == HttpStatusCode.BadRequest)
@@ -282,13 +268,13 @@ namespace XmlRpc.Client
                 else
                     throw new XmlRpcServerException(httpResp.StatusDescription);
             }
+
             var serializer = new XmlRpcResponseDeserializer();
             serializer.Configuration.NonStandard = NonStandard;
-            var retType = returnType;
-            if (retType == null)
-                retType = req.mi.ReturnType;
-            var xmlRpcResp = serializer.DeserializeResponse(respStm, retType);
-            return xmlRpcResp;
+
+            var retType = returnType ?? request.mi.ReturnType;
+
+            return serializer.DeserializeResponse(responseStream, retType);
         }
 
         public static MethodInfo GetMethodInfoFromName(object clientObj, string methodName, object[] parameters)
@@ -296,121 +282,100 @@ namespace XmlRpc.Client
             var paramTypes = new Type[0];
             if (parameters != null)
             {
+                if (parameters.Any(p => p == null))
+                    throw new XmlRpcNullParameterException("Null parameters are invalid");
+
                 paramTypes = new Type[parameters.Length];
                 for (int i = 0; i < paramTypes.Length; i++)
-                {
-                    if (parameters[i] == null)
-                        throw new XmlRpcNullParameterException("Null parameters are invalid");
                     paramTypes[i] = parameters[i].GetType();
-                }
             }
+
             var type = clientObj.GetType();
-            var mi = type.GetMethod(methodName, paramTypes);
-            if (mi == null)
+            var methodInfo = type.GetMethod(methodName, paramTypes);
+            if (methodInfo != null)
+                return methodInfo;
+
+            try
             {
-                try
-                {
-                    mi = type.GetMethod(methodName);
-                }
-                catch (AmbiguousMatchException)
-                {
-                    throw new XmlRpcInvalidParametersException("Method parameters match "
-                      + "the signature of more than one method");
-                }
-                if (mi == null)
-                    throw new Exception(
-                      "Invoke on non-existent or non-public proxy method");
-                else
-                    throw new XmlRpcInvalidParametersException("Method parameters do "
-                      + "not match signature of any method called " + methodName);
+                methodInfo = type.GetMethod(methodName);
             }
-            return mi;
+            catch (AmbiguousMatchException)
+            {
+                throw new XmlRpcInvalidParametersException("Method parameters match the signature of more than one method");
+            }
+
+            if (methodInfo == null)
+                throw new Exception("Invoke on non-existent or non-public proxy method");
+
+            throw new XmlRpcInvalidParametersException("Method parameters do not match signature of any method called " + methodName);
         }
 
-        string GetRpcMethodName(MethodInfo mi)
+        string GetRpcMethodName(MethodInfo methodInfo)
         {
+            const string BeginPrefix = "Begin";
+
             string rpcMethod;
-            string MethodName = mi.Name;
-            var attr = Attribute.GetCustomAttribute(mi, typeof(XmlRpcBeginAttribute));
+            var MethodName = methodInfo.Name;
+            var attr = Attribute.GetCustomAttribute(methodInfo, typeof(XmlRpcBeginAttribute));
             if (attr != null)
             {
                 rpcMethod = ((XmlRpcBeginAttribute)attr).Method;
-                if (rpcMethod == "")
+                if (string.IsNullOrWhiteSpace(rpcMethod))
                 {
-                    if (!MethodName.StartsWith("Begin") || MethodName.Length <= 5)
-                        throw new Exception(String.Format(
-                          "method {0} has invalid signature for begin method",
-                          MethodName));
-                    rpcMethod = MethodName.Substring(5);
+                    if (!MethodName.StartsWith(BeginPrefix))
+                        throw new Exception($"method {MethodName} has invalid signature for begin method");
+
+                    rpcMethod = MethodName.Substring(MethodName.Length);
                 }
+
                 return rpcMethod;
             }
+
             // if no XmlRpcBegin attribute, must have XmlRpcMethod attribute   
-            attr = Attribute.GetCustomAttribute(mi, typeof(XmlRpcMethodAttribute));
+            attr = Attribute.GetCustomAttribute(methodInfo, typeof(XmlRpcMethodAttribute));
             if (attr == null)
                 throw new Exception("missing method attribute");
 
             var xrmAttr = attr as XmlRpcMethodAttribute;
             rpcMethod = xrmAttr.Method;
-            if (rpcMethod == "")
-                rpcMethod = mi.Name;
+            if (string.IsNullOrWhiteSpace(rpcMethod))
+                rpcMethod = methodInfo.Name;
 
             return rpcMethod;
         }
 
-        public IAsyncResult BeginInvoke(
-          MethodBase mb,
-          object[] parameters,
-          AsyncCallback callback,
-          object outerAsyncState)
+        public IAsyncResult BeginInvoke(MethodBase methodBase, object[] parameters, AsyncCallback callback, object outerAsyncState)
         {
-            return BeginInvoke(mb as MethodInfo, parameters, this, callback, outerAsyncState);
+            return BeginInvoke(methodBase as MethodInfo, parameters, this, callback, outerAsyncState);
         }
 
-        public IAsyncResult BeginInvoke(
-          MethodInfo mi,
-          object[] parameters,
-          AsyncCallback callback,
-          object outerAsyncState)
+        public IAsyncResult BeginInvoke(MethodInfo methodInfo, object[] parameters, AsyncCallback callback, object outerAsyncState)
         {
-            return BeginInvoke(mi, parameters, this, callback, outerAsyncState);
+            return BeginInvoke(methodInfo, parameters, this, callback, outerAsyncState);
         }
 
-        public IAsyncResult BeginInvoke(
-          string methodName,
-          object[] parameters,
-          object clientObj,
-          AsyncCallback callback,
-          object outerAsyncState)
+        public IAsyncResult BeginInvoke(string methodName, object[] parameters, object clientObj, AsyncCallback callback, object outerAsyncState)
         {
-            var mi = GetMethodInfoFromName(clientObj, methodName, parameters);
-            return BeginInvoke(mi, parameters, this, callback, outerAsyncState);
+            var methodInfo = GetMethodInfoFromName(clientObj, methodName, parameters);
+            return BeginInvoke(methodInfo, parameters, this, callback, outerAsyncState);
         }
 
-        public IAsyncResult BeginInvoke(
-          MethodInfo mi,
-          object[] parameters,
-          object clientObj,
-          AsyncCallback callback,
-          object outerAsyncState)
+        public IAsyncResult BeginInvoke(MethodInfo methodInfo, object[] parameters, object clientObj, AsyncCallback callback, object outerAsyncState)
         {
             var useUrl = GetEffectiveUrl(clientObj);
             var webReq = GetWebRequest(new Uri(useUrl));
-            var xmlRpcReq = MakeXmlRpcRequest(webReq, mi, parameters, clientObj, XmlRpcMethod, _id);
+            var xmlRpcReq = MakeXmlRpcRequest(webReq, methodInfo, parameters, XmlRpcMethod);
             SetProperties(webReq);
             SetRequestHeaders(Headers, webReq);
 
             SetClientCertificates(ClientCertificates, webReq);
-            Encoding useEncoding = null;
-            if (XmlEncoding != null)
-                useEncoding = XmlEncoding;
-            var asr = new XmlRpcAsyncResult(
-                this, xmlRpcReq, useEncoding, UseEmptyParamsTag, UseIndentation, Indentation,
-                UseIntTag, UseStringTag, webReq, callback, outerAsyncState);
-            webReq.BeginGetRequestStream(new AsyncCallback(GetRequestStreamCallback), asr);
-            if (!asr.IsCompleted)
-                asr.CompletedSynchronously = false;
-            return asr;
+            var asyncResult = new XmlRpcAsyncResult(this, xmlRpcReq, XmlEncoding, UseEmptyParamsTag, UseIndentation, Indentation, UseIntTag, UseStringTag, webReq, callback, outerAsyncState);
+            webReq.BeginGetRequestStream(new AsyncCallback(GetRequestStreamCallback), asyncResult);
+
+            if (!asyncResult.IsCompleted)
+                asyncResult.CompletedSynchronously = false;
+
+            return asyncResult;
         }
 
         static void GetRequestStreamCallback(IAsyncResult asyncResult)
@@ -633,25 +598,20 @@ namespace XmlRpc.Client
 
         string GetEffectiveUrl(object clientObj)
         {
-            Type type = clientObj.GetType();
-            // client can either have define URI in attribute or have set it
-            // via proxy's ServiceURI property - but must exist by now
-            string useUrl = "";
+            var type = clientObj.GetType();
+            var useUrl = string.Empty;
             if (string.IsNullOrWhiteSpace(Url))
             {
                 var urlAttr = Attribute.GetCustomAttribute(type, typeof(XmlRpcUrlAttribute));
-                if (urlAttr != null)
-                {
-                    var xrsAttr = urlAttr as XmlRpcUrlAttribute;
-                    useUrl = xrsAttr.Uri;
-                }
+                if (urlAttr is XmlRpcUrlAttribute xrsAttribute)
+                    useUrl = xrsAttribute.Uri;
             }
             else
             {
                 useUrl = Url;
             }
             if (string.IsNullOrWhiteSpace(useUrl))
-                throw new XmlRpcMissingUrl("Proxy XmlRpcUrl attribute or Url property not set.");
+                throw new XmlRpcMissingUrl("XmlRpcUrl attribute or Url property not set.");
 
             return useUrl;
         }
@@ -663,92 +623,92 @@ namespace XmlRpc.Client
         }
 
         [XmlRpcMethod("system.listMethods")]
-        public IAsyncResult BeginSystemListMethods(AsyncCallback Callback, object State)
+        public IAsyncResult BeginSystemListMethods(AsyncCallback callback, object state)
         {
-            return BeginInvoke("SystemListMethods", new object[0], this, Callback, State);
+            return BeginInvoke("SystemListMethods", new object[0], this, callback, state);
         }
 
-        public string[] EndSystemListMethods(IAsyncResult AsyncResult)
+        [XmlRpcMethod("system.multicall")]
+        public string[] SystemMulticall()
         {
-            return (string[])EndInvoke(AsyncResult);
+            return (string[])Invoke("SystemMulticall", new object[0]);
+        }
+
+        [XmlRpcMethod("system.multicall")]
+        public IAsyncResult SystemMulticall(AsyncCallback callback, object state)
+        {
+            return BeginInvoke("SystemMulticall", new object[0], this, callback, state);
+        }
+
+        public string[] EndSystemListMethods(IAsyncResult asyncResult)
+        {
+            return (string[])EndInvoke(asyncResult);
         }
 
         [XmlRpcMethod("system.methodSignature")]
-        public object[] SystemMethodSignature(string MethodName)
+        public object[] SystemMethodSignature(string methodName)
         {
-            return (object[])Invoke("SystemMethodSignature", new object[] { MethodName });
+            return (object[])Invoke("SystemMethodSignature", new object[] { methodName });
         }
 
         [XmlRpcMethod("system.methodSignature")]
-        public IAsyncResult BeginSystemMethodSignature(string MethodName, AsyncCallback Callback, object State)
+        public IAsyncResult BeginSystemMethodSignature(string methodName, AsyncCallback callback, object state)
         {
-            return BeginInvoke("SystemMethodSignature", new object[] { MethodName }, this, Callback, State);
+            return BeginInvoke("SystemMethodSignature", new object[] { methodName }, this, callback, state);
         }
 
-        public Array EndSystemMethodSignature(IAsyncResult AsyncResult)
+        public Array EndSystemMethodSignature(IAsyncResult asyncResult)
         {
-            return (Array)EndInvoke(AsyncResult);
-        }
-
-        [XmlRpcMethod("system.methodHelp")]
-        public string SystemMethodHelp(string MethodName)
-        {
-            return (string)Invoke("SystemMethodHelp", new object[] { MethodName });
+            return (Array)EndInvoke(asyncResult);
         }
 
         [XmlRpcMethod("system.methodHelp")]
-        public IAsyncResult BeginSystemMethodHelp(string MethodName, AsyncCallback Callback, object State)
+        public string SystemMethodHelp(string methodName)
         {
-            return BeginInvoke("SystemMethodHelp", new object[] { MethodName }, this, Callback, State);
+            return (string)Invoke("SystemMethodHelp", new object[] { methodName });
         }
 
-        public string EndSystemMethodHelp(IAsyncResult AsyncResult)
+        [XmlRpcMethod("system.methodHelp")]
+        public IAsyncResult BeginSystemMethodHelp(string methodName, AsyncCallback callback, object state)
         {
-            return (string)EndInvoke(AsyncResult);
+            return BeginInvoke("SystemMethodHelp", new object[] { methodName }, this, callback, state);
         }
 
-        /// <summary>
-        /// Required method for Designer support - do not modify
-        /// the contents of this method with the code editor.
-        /// </summary>
-        void InitializeComponent()
+        public string EndSystemMethodHelp(IAsyncResult asyncResult)
         {
+            return (string)EndInvoke(asyncResult);
         }
 
         protected virtual WebRequest GetWebRequest(Uri uri)
         {
-            WebRequest req = WebRequest.Create(uri);
-            return req;
+            return WebRequest.Create(uri);
         }
 
         protected virtual WebResponse GetWebResponse(WebRequest request)
         {
-            WebResponse ret;
             try
             {
-                ret = request.GetResponse();
+                return request.GetResponse();
             }
             catch (WebException ex)
             {
                 if (ex.Response == null)
                     throw;
-                ret = ex.Response;
+
+                return ex.Response;
             }
-            return ret;
         }
 
-        // support for gzip and deflate
         protected Stream MaybeDecompressStream(HttpWebResponse httpWebResp, Stream respStream)
         {
-            Stream decodedStream;
-            string contentEncoding = httpWebResp.ContentEncoding?.ToLower() ?? string.Empty;
+            var contentEncoding = httpWebResp.ContentEncoding?.ToLowerInvariant() ?? string.Empty;
+
             if (contentEncoding.Contains("gzip"))
-                decodedStream = new GZipStream(respStream, CompressionMode.Decompress);
+                return new GZipStream(respStream, CompressionMode.Decompress);
             else if (contentEncoding.Contains("deflate"))
-                decodedStream = new DeflateStream(respStream, CompressionMode.Decompress);
-            else
-                decodedStream = respStream;
-            return decodedStream;
+                return new DeflateStream(respStream, CompressionMode.Decompress);
+
+            return respStream;
         }
 
         protected virtual WebResponse GetWebResponse(WebRequest request, IAsyncResult result)
