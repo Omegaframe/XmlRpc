@@ -51,105 +51,96 @@ namespace XmlRpc.Client
             ResponseHeaders = null;
             ResponseCookies = null;
 
-            WebRequest webReq = null;
-            object reto = null;
+            var useUrl = GetEffectiveUrl(clientObj);
+            var webReq = GetWebRequest(new Uri(useUrl));
+            var req = MakeXmlRpcRequest(webReq, methodInfo, parameters, XmlRpcMethod);
+
+            SetProperties(webReq);
+            SetRequestHeaders(Headers, webReq);
+            SetClientCertificates(ClientCertificates, webReq);
+
+            var logging = (RequestEvent != null);
+            Stream reqStream = null;
+            Stream serStream;
+
+            if (!logging)
+                serStream = reqStream = webReq.GetRequestStream();
+            else
+                serStream = new MemoryStream(2000);
+
             try
             {
-                var useUrl = GetEffectiveUrl(clientObj);
-                webReq = GetWebRequest(new Uri(useUrl));
-                var req = MakeXmlRpcRequest(webReq, methodInfo, parameters, XmlRpcMethod);
+                var serializer = new XmlRpcRequestSerializer();
+                serializer.Configuration.XmlEncoding = XmlEncoding;
+                serializer.Configuration.UseIndentation = UseIndentation;
+                serializer.Configuration.Indentation = Indentation;
+                serializer.Configuration.NonStandard = NonStandard;
+                serializer.Configuration.UseStringTag = UseStringTag;
+                serializer.Configuration.UseIntTag = UseIntTag;
+                serializer.Configuration.UseEmptyParamsTag = UseEmptyParamsTag;
+                serializer.SerializeRequest(serStream, req);
 
-                SetProperties(webReq);
-                SetRequestHeaders(Headers, webReq);
-                SetClientCertificates(ClientCertificates, webReq);
-
-                Stream serStream = null;
-                Stream reqStream = null;
-                bool logging = (RequestEvent != null);
-                if (!logging)
-                    serStream = reqStream = webReq.GetRequestStream();
-                else
-                    serStream = new MemoryStream(2000);
-                try
+                if (logging)
                 {
-                    var serializer = new XmlRpcRequestSerializer();
-                    if (XmlEncoding != null)
-                        serializer.Configuration.XmlEncoding = XmlEncoding;
-                    serializer.Configuration.UseIndentation = UseIndentation;
-                    serializer.Configuration.Indentation = Indentation;
-                    serializer.Configuration.NonStandard = NonStandard;
-                    serializer.Configuration.UseStringTag = UseStringTag;
-                    serializer.Configuration.UseIntTag = UseIntTag;
-                    serializer.Configuration.UseEmptyParamsTag = UseEmptyParamsTag;
-                    serializer.SerializeRequest(serStream, req);
-                    if (logging)
-                    {
-                        reqStream = webReq.GetRequestStream();
-                        serStream.Position = 0;
-                        serStream.CopyTo(reqStream);
-                        reqStream.Flush();
-                        serStream.Position = 0;
-                        OnRequest(new XmlRpcRequestEventArgs(req.proxyId, req.number,
-                          serStream));
-                    }
-                }
-                finally
-                {
-                    if (reqStream != null)
-                        reqStream.Close();
-                }
-
-                var webResp = GetWebResponse(webReq) as HttpWebResponse;
-
-                ResponseCookies = webResp.Cookies;
-                ResponseHeaders = webResp.Headers;
-
-                Stream respStm = null;
-                Stream deserStream;
-                logging = (ResponseEvent != null);
-                try
-                {
-                    respStm = webResp.GetResponseStream();
-                    if (!logging)
-                    {
-                        deserStream = respStm;
-                    }
-                    else
-                    {
-                        deserStream = new MemoryStream(2000);
-                        respStm.CopyTo(deserStream);
-                        deserStream.Flush();
-                        deserStream.Position = 0;
-                    }
-
-                    deserStream = MaybeDecompressStream(webResp, deserStream);
-
-                    try
-                    {
-                        var resp = ReadResponse(req, webResp, deserStream, null);
-                        reto = resp.retVal;
-                    }
-                    finally
-                    {
-                        if (logging)
-                        {
-                            deserStream.Position = 0;
-                            OnResponse(new XmlRpcResponseEventArgs(req.proxyId, req.number, deserStream));
-                        }
-                    }
-                }
-                finally
-                {
-                    if (respStm != null)
-                        respStm.Close();
+                    reqStream = webReq.GetRequestStream();
+                    serStream.Position = 0;
+                    serStream.CopyTo(reqStream);
+                    reqStream.Flush();
+                    serStream.Position = 0;
+                    OnRequest(new XmlRpcRequestEventArgs(req.proxyId, req.number, serStream));
                 }
             }
             finally
             {
-                if (webReq != null)
-                    webReq = null;
+                reqStream?.Close();
             }
-            return reto;
+
+            var webResp = GetWebResponse(webReq) as HttpWebResponse;
+
+            ResponseCookies = webResp.Cookies;
+            ResponseHeaders = webResp.Headers;
+
+            Stream respStm = null;
+            Stream deserStream;
+            logging = (ResponseEvent != null);
+            try
+            {
+                respStm = webResp.GetResponseStream();
+                if (!logging)
+                {
+                    deserStream = respStm;
+                }
+                else
+                {
+                    deserStream = new MemoryStream(2000);
+                    respStm.CopyTo(deserStream);
+                    deserStream.Flush();
+                    deserStream.Position = 0;
+                }
+
+                deserStream = MaybeDecompressStream(webResp, deserStream);
+
+                try
+                {
+                    var resp = ReadResponse(req, webResp, deserStream, null);
+                    object reto = resp.retVal;
+                }
+                finally
+                {
+                    if (logging)
+                    {
+                        deserStream.Position = 0;
+                        OnResponse(new XmlRpcResponseEventArgs(req.proxyId, req.number, deserStream));
+                    }
+                }
+            }
+            finally
+            {
+                if (respStm != null)
+                    respStm.Close();
+            }
+
+            return null;
         }
 
         public bool AllowAutoRedirect { get; set; } = true;
@@ -248,13 +239,9 @@ namespace XmlRpc.Client
             }
         }
 
-        XmlRpcRequest MakeXmlRpcRequest(WebRequest webRequest, MethodInfo methodInfo, object[] parameters, string xmlRpcMethod)
+        public XmlRpcRequest MakeXmlRpcRequest(MethodInfo methodInfo, object[] parameters, string xmlRpcMethod)
         {
             var rpcMethodName = GetRpcMethodName(methodInfo);
-
-            webRequest.Method = HttpMethod.Post.Method;
-            webRequest.ContentType = MediaTypeNames.Text.Xml;
-
             return new XmlRpcRequest(rpcMethodName, parameters, methodInfo, xmlRpcMethod, Id);
         }
 

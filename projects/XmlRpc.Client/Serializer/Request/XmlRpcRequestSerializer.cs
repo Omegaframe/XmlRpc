@@ -6,14 +6,17 @@ using System.Xml;
 using XmlRpc.Client.Attributes;
 using XmlRpc.Client.Exceptions;
 using XmlRpc.Client.Model;
+using XmlRpc.Client.Serializer.Model;
 
 namespace XmlRpc.Client.Serializer.Request
 {
     public class XmlRpcRequestSerializer : XmlRpcSerializer
     {
-        public void SerializeRequest(Stream inputStream, XmlRpcRequest request)
+        public XmlRpcRequestSerializer(SerializerConfig serializerConfig) : base(serializerConfig) { }
+
+        public void SerializeRequest(Stream outputStream, XmlRpcRequest request)
         {
-            var xtw = new XmlTextWriter(inputStream, Configuration.XmlEncoding);
+            var xtw = new XmlTextWriter(outputStream, Configuration.XmlEncoding);
             Configuration.ConfigureXmlFormat(xtw);
 
             xtw.WriteStartDocument();

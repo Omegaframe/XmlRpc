@@ -21,6 +21,11 @@ namespace XmlRpc.Client.Serializer
             Configuration = new SerializerConfig();
         }
 
+        public XmlRpcSerializer(SerializerConfig serializerConfig)
+        {
+            Configuration = serializerConfig;
+        }
+
         public void Serialize(XmlTextWriter xtw, object o)
         {
             Serialize(xtw, o, new ArrayList(16));
