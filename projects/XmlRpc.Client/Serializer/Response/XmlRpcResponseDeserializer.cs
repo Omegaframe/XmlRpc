@@ -11,6 +11,8 @@ namespace XmlRpc.Client.Serializer.Response
 {
     public class XmlRpcResponseDeserializer : XmlRpcSerializer
     {
+        public XmlRpcResponseDeserializer(SerializerConfig config) : base(config) { }
+
         public XmlRpcResponse DeserializeResponse(Stream inputStream, Type serviceType)
         {
             if (Configuration.AllowInvalidHTTPContent())

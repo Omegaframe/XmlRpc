@@ -1,10 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Reflection;
-using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using XmlRpc.Client.Serializer.Model;
 using XmlRpc.Client.Serializer.Request;
+using XmlRpc.Client.Serializer.Response;
 
 namespace XmlRpc.Client
 {
@@ -32,12 +34,27 @@ namespace XmlRpc.Client
             _protocol = new XmlRpcClientProtocol();
         }
 
-        public object Invoke(MethodInfo methodInfo, params object[] parameters)
+        public async Task<object> Invoke(CancellationToken cancellationToken, MethodInfo methodInfo, params object[] parameters)
         {
-            var req = _protocol.MakeXmlRpcRequest(methodInfo, parameters, XmlRpcMethod);
+            var request = _protocol.MakeXmlRpcRequest(methodInfo, parameters, XmlRpcMethod);
 
+            using var memoryStream = new MemoryStream();
             var serializer = new XmlRpcRequestSerializer(Configuration);
-            serializer.SerializeRequest(serStream, req);
+            serializer.SerializeRequest(memoryStream, request);
+
+            memoryStream.Seek(0, SeekOrigin.Begin);
+            using var requestMessage = new HttpRequestMessage()
+            {
+                Method = HttpMethod.Post,
+                Content = new StreamContent(memoryStream)
+            };
+
+            using var response = await _client.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+
+            using var responseStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+            var deserializer = new XmlRpcResponseDeserializer(Configuration);
+            return deserializer.DeserializeResponse(responseStream, request.mi.ReturnType);
         }
     }
 }
