@@ -1,324 +1,250 @@
 using System;
-using System.Collections;
-using System.Reflection;
 using System.Xml;
-using XmlRpc.Client.Attributes;
 using XmlRpc.Client.DataTypes;
 using XmlRpc.Client.Model;
 
 namespace XmlRpc.Server.Protocol
 {
-    public class XmlRpcDocWriter
+    static class XmlRpcDocWriter
     {
-        public static void WriteBody(XmlWriter wrtr, Type type, bool autoDocVersion)
+        public static void WriteDoc(XmlWriter writer, Type type, bool autoDocVersion)
         {
-            wrtr.WriteStartElement("body");
+            var serviceInfo = XmlRpcServiceInfo.CreateServiceInfo(type);
 
-            WriteType(wrtr, type);
+            writer.WriteStartElement("html");
 
-            WriteFooter(wrtr, autoDocVersion);
+            WriteHead(writer, serviceInfo.Name);
+            WriteBody(writer, type, autoDocVersion);
 
-            wrtr.WriteEndElement();
+            writer.WriteEndElement();
         }
 
-        public static void WriteDoc(XmlWriter wrtr, Type type, bool autoDocVersion)
+        static void WriteHead(XmlWriter writer, string title)
         {
-            XmlRpcServiceInfo svcInfo = XmlRpcServiceInfo.CreateServiceInfo(type);
+            writer.WriteStartElement("head");
 
-            wrtr.WriteStartElement("html");
-            WriteHead(wrtr, svcInfo.Name);
-            WriteBody(wrtr, type, autoDocVersion);
-            wrtr.WriteEndElement();
+            WriteStyle(writer);
+            WriteTitle(writer, title);
+
+            writer.WriteEndElement();
         }
 
-        public static void WriteFooter(XmlWriter wrtr, bool autoDocVersion)
+        static void WriteBody(XmlWriter writer, Type type, bool autoDocVersion)
+        {
+            writer.WriteStartElement("body");
+
+            WriteType(writer, type);
+
+            WriteFooter(writer, autoDocVersion);
+
+            writer.WriteEndElement();
+        }
+
+        static void WriteFooter(XmlWriter writer, bool autoDocVersion)
         {
             if (!autoDocVersion)
                 return;
 
-            wrtr.WriteStartElement("div");
-            wrtr.WriteAttributeString("id", "content");
-            wrtr.WriteStartElement("hr");
-            wrtr.WriteEndElement();
+            writer.WriteStartElement("div");
+            writer.WriteAttributeString("id", "content");
+            writer.WriteStartElement("hr");
+            writer.WriteEndElement();
 
             var assemblyName = typeof(XmlRpcServerProtocol).Assembly.GetName();
-            wrtr.WriteString($"{assemblyName.Name} - Version {assemblyName.Version.Major}.{assemblyName.Version.Minor}.{assemblyName.Version.Build}");
+            writer.WriteString($"{assemblyName.Name} - Version {assemblyName.Version.Major}.{assemblyName.Version.Minor}.{assemblyName.Version.Build}");
 
-            wrtr.WriteEndElement();
+            writer.WriteEndElement();
         }
 
-        public static void WriteHead(XmlWriter wrtr, string title)
+        static void WriteType(XmlWriter writer, Type type)
         {
-            wrtr.WriteStartElement("head");
-            WriteStyle(wrtr);
-            WriteTitle(wrtr, title);
-            wrtr.WriteEndElement();
-        }
+            writer.WriteStartElement("div");
+            writer.WriteAttributeString("id", "content");
 
-        public static void WriteType(XmlWriter wrtr, Type type)
-        {
-            var structs = new ArrayList();
+            var serviceInfo = XmlRpcServiceInfo.CreateServiceInfo(type);
 
-            wrtr.WriteStartElement("div");
-            wrtr.WriteAttributeString("id", "content");
+            writer.WriteStartElement("p");
+            writer.WriteAttributeString("class", "heading1");
+            writer.WriteString(serviceInfo.Name);
+            writer.WriteEndElement();
+            writer.WriteStartElement("br");
+            writer.WriteEndElement();
 
-            XmlRpcServiceInfo svcInfo = XmlRpcServiceInfo.CreateServiceInfo(type);
-
-            wrtr.WriteStartElement("p");
-            wrtr.WriteAttributeString("class", "heading1");
-            wrtr.WriteString(svcInfo.Name);
-            wrtr.WriteEndElement();
-            wrtr.WriteStartElement("br");
-            wrtr.WriteEndElement();
-
-            if (!string.IsNullOrWhiteSpace(svcInfo.Doc))
+            if (!string.IsNullOrWhiteSpace(serviceInfo.Doc))
             {
-                wrtr.WriteStartElement("p");
-                wrtr.WriteAttributeString("class", "intro");
-                wrtr.WriteString(svcInfo.Doc);
-                wrtr.WriteEndElement();
+                writer.WriteStartElement("p");
+                writer.WriteAttributeString("class", "intro");
+                writer.WriteString(serviceInfo.Doc);
+                writer.WriteEndElement();
             }
 
-            wrtr.WriteStartElement("p");
-            wrtr.WriteAttributeString("class", "intro");
-            wrtr.WriteString("The following methods are supported:");
-            wrtr.WriteEndElement();
+            writer.WriteStartElement("p");
+            writer.WriteAttributeString("class", "intro");
+            writer.WriteString("The following methods are supported:");
+            writer.WriteEndElement();
 
-            wrtr.WriteStartElement("ul");
+            writer.WriteStartElement("ul");
 
-            foreach (var mthdInfo in svcInfo.Methods)
+            foreach (var methodInfo in serviceInfo.Methods)
             {
-                if (mthdInfo.IsHidden)
+                if (methodInfo.IsHidden)
                     continue;
 
-                wrtr.WriteStartElement("li");
-                wrtr.WriteStartElement("a");
-                wrtr.WriteAttributeString("href", "#" + mthdInfo.XmlRpcName);
-                wrtr.WriteString(mthdInfo.XmlRpcName);
-                wrtr.WriteEndElement();
-                wrtr.WriteEndElement();
+                writer.WriteStartElement("li");
+                writer.WriteStartElement("a");
+                writer.WriteAttributeString("href", "#" + methodInfo.XmlRpcName);
+                writer.WriteString(methodInfo.XmlRpcName);
+                writer.WriteEndElement();
+                writer.WriteEndElement();
             }
 
-            wrtr.WriteEndElement();
+            writer.WriteEndElement();
 
-            foreach (var mthdInfo in svcInfo.Methods)
+            foreach (var methodInfo in serviceInfo.Methods)
             {
-                if (!mthdInfo.IsHidden)
-                    WriteMethod(wrtr, mthdInfo, structs);
+                if (!methodInfo.IsHidden)
+                    WriteMethod(writer, methodInfo);
             }
 
-            for (var j = 0; j < structs.Count; j++)
-                WriteStruct(wrtr, structs[j] as Type, structs);
-
-            wrtr.WriteEndElement();
+            writer.WriteEndElement();
         }
 
-        static void WriteMethod(XmlWriter wrtr, XmlRpcMethodInfo mthdInfo, ArrayList structs)
+        static void WriteMethod(XmlWriter writer, XmlRpcMethodInfo methodInfos)
         {
-            wrtr.WriteStartElement("span");
+            writer.WriteStartElement("span");
 
-            wrtr.WriteStartElement("h2");
-            wrtr.WriteStartElement("a");
-            wrtr.WriteAttributeString("name", $"#{mthdInfo.XmlRpcName}");
-            wrtr.WriteString($"method {mthdInfo.XmlRpcName}");
-            wrtr.WriteEndElement();
-            wrtr.WriteEndElement();
+            writer.WriteStartElement("h2");
+            writer.WriteStartElement("a");
+            writer.WriteAttributeString("name", $"#{methodInfos.XmlRpcName}");
+            writer.WriteString($"method {methodInfos.XmlRpcName}");
+            writer.WriteEndElement();
+            writer.WriteEndElement();
 
-            if (!string.IsNullOrWhiteSpace(mthdInfo.Doc))
+            if (!string.IsNullOrWhiteSpace(methodInfos.Doc))
             {
-                wrtr.WriteStartElement("p");
-                wrtr.WriteAttributeString("class", "intro");
-                wrtr.WriteString(mthdInfo.Doc);
-                wrtr.WriteEndElement();
+                writer.WriteStartElement("p");
+                writer.WriteAttributeString("class", "intro");
+                writer.WriteString(methodInfos.Doc);
+                writer.WriteEndElement();
             }
 
-            wrtr.WriteStartElement("h3");
-            wrtr.WriteString("Parameters");
-            wrtr.WriteEndElement();
+            writer.WriteStartElement("h3");
+            writer.WriteString("Parameters");
+            writer.WriteEndElement();
 
-            wrtr.WriteStartElement("table");
-            wrtr.WriteAttributeString("cellspacing", "0");
-            wrtr.WriteAttributeString("cellpadding", "5");
-            wrtr.WriteAttributeString("width", "90%");
+            writer.WriteStartElement("table");
+            writer.WriteAttributeString("cellspacing", "0");
+            writer.WriteAttributeString("cellpadding", "5");
+            writer.WriteAttributeString("width", "90%");
 
-            if (mthdInfo.Parameters.Length > 0)
+            if (methodInfos.Parameters.Length > 0)
             {
-                foreach (XmlRpcParameterInfo parInfo in mthdInfo.Parameters)
+                foreach (var parameterInfo in methodInfos.Parameters)
                 {
-                    wrtr.WriteStartElement("tr");
-                    wrtr.WriteStartElement("td");
-                    wrtr.WriteAttributeString("width", "33%");
-                    WriteType(wrtr, parInfo.Type, parInfo.IsParams, structs);
-                    wrtr.WriteEndElement();
+                    writer.WriteStartElement("tr");
+                    writer.WriteStartElement("td");
+                    writer.WriteAttributeString("width", "33%");
+                    WriteType(writer, parameterInfo.Type, parameterInfo.IsParams);
+                    writer.WriteEndElement();
 
-                    wrtr.WriteStartElement("td");
-                    if (parInfo.Doc == "")
+                    writer.WriteStartElement("td");
+                    if (string.IsNullOrWhiteSpace(parameterInfo.Doc))
                     {
-                        wrtr.WriteString(parInfo.Name);
+                        writer.WriteString(parameterInfo.Name);
                     }
                     else
                     {
-                        wrtr.WriteString(parInfo.Name);
-                        wrtr.WriteString(" - ");
-                        wrtr.WriteString(parInfo.Doc);
+                        writer.WriteString(parameterInfo.Name);
+                        writer.WriteString(" - ");
+                        writer.WriteString(parameterInfo.Doc);
                     }
-                    wrtr.WriteEndElement();
-                    wrtr.WriteEndElement();
+                    writer.WriteEndElement();
+                    writer.WriteEndElement();
                 }
             }
             else
             {
-                wrtr.WriteStartElement("tr");
-                wrtr.WriteStartElement("td");
-                wrtr.WriteAttributeString("width", "33%");
-                wrtr.WriteString("none");
-                wrtr.WriteEndElement();
-                wrtr.WriteStartElement("td");
-                wrtr.WriteString("&nbsp;");
-                wrtr.WriteEndElement();
-                wrtr.WriteEndElement();
+                writer.WriteStartElement("tr");
+                writer.WriteStartElement("td");
+                writer.WriteAttributeString("width", "33%");
+                writer.WriteString("none");
+                writer.WriteEndElement();
+                writer.WriteStartElement("td");
+                writer.WriteString("&nbsp;");
+                writer.WriteEndElement();
+                writer.WriteEndElement();
             }
-            wrtr.WriteEndElement();
+            writer.WriteEndElement();
 
-            wrtr.WriteStartElement("h3");
-            wrtr.WriteString("Return Value");
-            wrtr.WriteEndElement();
+            writer.WriteStartElement("h3");
+            writer.WriteString("Return Value");
+            writer.WriteEndElement();
 
-            wrtr.WriteStartElement("table");
-            wrtr.WriteAttributeString("cellspacing", "0");
-            wrtr.WriteAttributeString("cellpadding", "5");
-            wrtr.WriteAttributeString("width", "90%");
+            writer.WriteStartElement("table");
+            writer.WriteAttributeString("cellspacing", "0");
+            writer.WriteAttributeString("cellpadding", "5");
+            writer.WriteAttributeString("width", "90%");
 
-            wrtr.WriteStartElement("tr");
+            writer.WriteStartElement("tr");
 
-            wrtr.WriteStartElement("td");
-            wrtr.WriteAttributeString("width", "33%");
-            WriteType(wrtr, mthdInfo.ReturnType, false, structs);
-            wrtr.WriteEndElement();
+            writer.WriteStartElement("td");
+            writer.WriteAttributeString("width", "33%");
+            WriteType(writer, methodInfos.ReturnType, false);
+            writer.WriteEndElement();
 
-            wrtr.WriteStartElement("td");
-            if (mthdInfo.ReturnDoc != "")
-                wrtr.WriteString(mthdInfo.ReturnDoc);
+            writer.WriteStartElement("td");
+            if (!string.IsNullOrWhiteSpace(methodInfos.ReturnDoc))
+                writer.WriteString(methodInfos.ReturnDoc);
             else
-                wrtr.WriteString("&nbsp;");
-            wrtr.WriteEndElement();
+                writer.WriteString(string.Empty);
+            writer.WriteEndElement();
 
-            wrtr.WriteEndElement();
+            writer.WriteEndElement();
 
-            wrtr.WriteEndElement();
+            writer.WriteEndElement();
 
-            wrtr.WriteEndElement();
+            writer.WriteEndElement();
         }
 
-        static void WriteStruct(XmlWriter wrtr, Type structType, ArrayList structs)
+        static void WriteStyle(XmlWriter writer)
         {
-            wrtr.WriteStartElement("span");
+            writer.WriteStartElement("style");
+            writer.WriteAttributeString("type", "text/css");
 
-            wrtr.WriteStartElement("h2");
-            wrtr.WriteStartElement("a");
-            wrtr.WriteAttributeString("name", $"#{structType.Name}");
+            writer.WriteString("BODY { color: #000000; background-color: white; font-family: Verdana; margin-left: 0px; margin-top: 0px; }");
+            writer.WriteString("#content { margin-left: 30px; font-size: .70em; padding-bottom: 2em; }");
+            writer.WriteString("A:link { color: #336699; font-weight: bold; text-decoration: underline; }");
+            writer.WriteString("A:visited { color: #6699cc; font-weight: bold; text-decoration: underline; }");
+            writer.WriteString("A:active { color: #336699; font-weight: bold; text-decoration: underline; }");
+            writer.WriteString("A:hover { color: cc3300; font-weight: bold; text-decoration: underline; }");
+            writer.WriteString("P { color: #000000; margin-top: 0px; margin-bottom: 12px; font-family: Verdana; }");
+            writer.WriteString("pre { background-color: #e5e5cc; padding: 5px; font-family: Courier New; font-size: x-small; margin-top: -5px; border: 1px #f0f0e0 solid; }");
+            writer.WriteString("td { color: #000000; font-family: Verdana; font-size: .7em; border: solid 1px;  }");
+            writer.WriteString("h2 { font-size: 1.5em; font-weight: bold; margin-top: 25px; margin-bottom: 10px; border-top: 1px solid #003366; margin-left: -15px; color: #003366; }");
+            writer.WriteString("h3 { font-size: 1.1em; color: #000000; margin-left: -15px; margin-top: 10px; margin-bottom: 10px; }");
+            writer.WriteString("ul, ol { margin-top: 10px; margin-left: 20px; }");
+            writer.WriteString("li { margin-top: 10px; color: #000000; }");
+            writer.WriteString("font.value { color: darkblue; font: bold; }");
+            writer.WriteString("font.key { color: darkgreen; font: bold; }");
+            writer.WriteString(".heading1 { color: #ffffff; font-family: Tahoma; font-size: 26px; font-weight: normal; background-color: #003366; margin-top: 0px; margin-bottom: 0px; margin-left: -30px; padding-top: 10px; padding-bottom: 3px; padding-left: 15px; width: 105%; }");
+            writer.WriteString(".intro { margin-left: -15px; }");
+            writer.WriteString("table { border: solid 1px; }");
 
-            wrtr.WriteString($"class {structType.Name}");
-            wrtr.WriteEndElement();
-            wrtr.WriteEndElement();
-
-            wrtr.WriteStartElement("h3");
-            wrtr.WriteString("Members");
-            wrtr.WriteEndElement();
-
-            wrtr.WriteEndElement();
-
-            wrtr.WriteStartElement("table");
-            wrtr.WriteAttributeString("cellspacing", "0");
-            wrtr.WriteAttributeString("cellpadding", "5");
-            wrtr.WriteAttributeString("width", "90%");
-
-            var structAction = MappingAction.Error;
-            var structAttr = Attribute.GetCustomAttribute(structType, typeof(XmlRpcMissingMappingAttribute));
-            if (structAttr != null && structAttr is XmlRpcMissingMappingAttribute)
-                structAction = (structAttr as XmlRpcMissingMappingAttribute).Action;
-
-            var mis = structType.GetMembers();
-            foreach (var mi in mis)
-            {
-                if (mi.MemberType == MemberTypes.Field)
-                {
-                    var fi = (FieldInfo)mi;
-
-                    wrtr.WriteStartElement("tr");
-
-                    wrtr.WriteStartElement("td");
-                    wrtr.WriteAttributeString("width", "33%");
-                    WriteType(wrtr, fi.FieldType, false, structs);
-                    wrtr.WriteEndElement();
-
-                    wrtr.WriteStartElement("td");
-                    var memberAction = structAction;
-                    var attr = Attribute.GetCustomAttribute(fi, typeof(XmlRpcMissingMappingAttribute));
-                    if (attr != null && attr is XmlRpcMissingMappingAttribute)
-                        memberAction = (attr as XmlRpcMissingMappingAttribute).Action;
-
-                    string memberName = fi.Name + " ";
-                    string desc = "";
-                    var mmbrAttr = Attribute.GetCustomAttribute(fi, typeof(XmlRpcMemberAttribute));
-                    if (attr != null && mmbrAttr is XmlRpcMemberAttribute)
-                    {
-                        if ((mmbrAttr as XmlRpcMemberAttribute).Member != "")
-                            memberName = (mmbrAttr as XmlRpcMemberAttribute).Member + " ";
-                        desc = (mmbrAttr as XmlRpcMemberAttribute).Description;
-                    }
-                    if (memberAction == MappingAction.Ignore)
-                        memberName += " (optional) ";
-                    if (desc != "")
-                        memberName = memberName + "- " + desc;
-                    wrtr.WriteString(memberName);
-                    wrtr.WriteEndElement();
-
-                    wrtr.WriteEndElement();
-                }
-            }
-            wrtr.WriteEndElement();
+            writer.WriteEndElement();
         }
 
-        static void WriteStyle(XmlWriter wrtr)
+        static void WriteTitle(XmlWriter writer, string title)
         {
-            wrtr.WriteStartElement("style");
-            wrtr.WriteAttributeString("type", "text/css");
-
-            wrtr.WriteString("BODY { color: #000000; background-color: white; font-family: Verdana; margin-left: 0px; margin-top: 0px; }");
-            wrtr.WriteString("#content { margin-left: 30px; font-size: .70em; padding-bottom: 2em; }");
-            wrtr.WriteString("A:link { color: #336699; font-weight: bold; text-decoration: underline; }");
-            wrtr.WriteString("A:visited { color: #6699cc; font-weight: bold; text-decoration: underline; }");
-            wrtr.WriteString("A:active { color: #336699; font-weight: bold; text-decoration: underline; }");
-            wrtr.WriteString("A:hover { color: cc3300; font-weight: bold; text-decoration: underline; }");
-            wrtr.WriteString("P { color: #000000; margin-top: 0px; margin-bottom: 12px; font-family: Verdana; }");
-            wrtr.WriteString("pre { background-color: #e5e5cc; padding: 5px; font-family: Courier New; font-size: x-small; margin-top: -5px; border: 1px #f0f0e0 solid; }");
-            wrtr.WriteString("td { color: #000000; font-family: Verdana; font-size: .7em; border: solid 1px;  }");
-            wrtr.WriteString("h2 { font-size: 1.5em; font-weight: bold; margin-top: 25px; margin-bottom: 10px; border-top: 1px solid #003366; margin-left: -15px; color: #003366; }");
-            wrtr.WriteString("h3 { font-size: 1.1em; color: #000000; margin-left: -15px; margin-top: 10px; margin-bottom: 10px; }");
-            wrtr.WriteString("ul, ol { margin-top: 10px; margin-left: 20px; }");
-            wrtr.WriteString("li { margin-top: 10px; color: #000000; }");
-            wrtr.WriteString("font.value { color: darkblue; font: bold; }");
-            wrtr.WriteString("font.key { color: darkgreen; font: bold; }");
-            wrtr.WriteString(".heading1 { color: #ffffff; font-family: Tahoma; font-size: 26px; font-weight: normal; background-color: #003366; margin-top: 0px; margin-bottom: 0px; margin-left: -30px; padding-top: 10px; padding-bottom: 3px; padding-left: 15px; width: 105%; }");
-            wrtr.WriteString(".intro { margin-left: -15px; }");
-            wrtr.WriteString("table { border: solid 1px; }");
-
-            wrtr.WriteEndElement();
+            writer.WriteStartElement("title");
+            writer.WriteString(title);
+            writer.WriteEndElement();
         }
 
-        static void WriteTitle(XmlWriter wrtr, string title)
-        {
-            wrtr.WriteStartElement("title");
-            wrtr.WriteString(title);
-            wrtr.WriteEndElement();
-        }
-
-        static void WriteType(XmlWriter wrtr, Type type, bool isparams, ArrayList structs)
+        static void WriteType(XmlWriter writer, Type type, bool isParams)
         {
             // TODO: following is hack for case when type is object
             string xmlRpcType;
-            if (!isparams)
+            if (!isParams)
             {
                 if (type != typeof(object))
                     xmlRpcType = XmlRpcServiceInfo.GetXmlRpcTypeString(type);
@@ -326,39 +252,40 @@ namespace XmlRpc.Server.Protocol
                     xmlRpcType = "any";
             }
             else
+            {
                 xmlRpcType = "varargs";
-            wrtr.WriteString(xmlRpcType);
+            }
+
+            writer.WriteString(xmlRpcType);
             if (xmlRpcType == "struct" && type != typeof(XmlRpcStruct))
             {
-                if (!structs.Contains(type))
-                    structs.Add(type);
-                wrtr.WriteString(" ");
-                wrtr.WriteStartElement("a");
-                wrtr.WriteAttributeString("href", "#" + type.Name);
-                wrtr.WriteString(type.Name);
-                wrtr.WriteEndElement();
+                writer.WriteString(" ");
+                writer.WriteStartElement("a");
+                writer.WriteAttributeString("href", "#" + type.Name);
+                writer.WriteString(type.Name);
+                writer.WriteEndElement();
             }
             else if (xmlRpcType == "array" || xmlRpcType == "varargs")
             {
                 if (type.GetArrayRank() == 1)  // single dim array
                 {
-                    wrtr.WriteString(" of ");
-                    Type elemType = type.GetElementType();
+                    writer.WriteString(" of ");
+                    var elemType = type.GetElementType();
+
                     string elemXmlRpcType;
                     if (elemType != typeof(object))
                         elemXmlRpcType = XmlRpcServiceInfo.GetXmlRpcTypeString(elemType);
                     else
                         elemXmlRpcType = "any";
-                    wrtr.WriteString(elemXmlRpcType);
+
+                    writer.WriteString(elemXmlRpcType);
                     if (elemXmlRpcType == "struct" && elemType != typeof(XmlRpcStruct))
                     {
-                        if (!structs.Contains(elemType))
-                            structs.Add(elemType);
-                        wrtr.WriteString(" ");
-                        wrtr.WriteStartElement("a");
-                        wrtr.WriteAttributeString("href", "#" + elemType.Name);
-                        wrtr.WriteString(elemType.Name);
-                        wrtr.WriteEndElement();
+                        writer.WriteString(" ");
+                        writer.WriteStartElement("a");
+                        writer.WriteAttributeString("href", "#" + elemType.Name);
+                        writer.WriteString(elemType.Name);
+                        writer.WriteEndElement();
                     }
                 }
             }
