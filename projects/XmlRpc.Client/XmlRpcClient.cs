@@ -4,27 +4,26 @@ using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using XmlRpc.Client.Attributes;
+using XmlRpc.Client.Internals;
 using XmlRpc.Client.Serializer.Model;
 using XmlRpc.Client.Serializer.Request;
 using XmlRpc.Client.Serializer.Response;
 
 namespace XmlRpc.Client
 {
-    public class XmlRpcClient : IXmlRpcProxy
+    public class XmlRpcClient : IXmlRpcClient
     {
         public SerializerConfig Configuration { get; set; }
         public string XmlRpcMethod { get; set; }
 
         readonly Guid _id;
         readonly HttpClient _client;
-        readonly XmlRpcClientProtocol _protocol;
 
         public XmlRpcClient(HttpClient client)
         {
             Configuration = new SerializerConfig();
 
             _client = client;
-            _protocol = new XmlRpcClientProtocol();
             _id = Guid.NewGuid();
         }
 
@@ -35,13 +34,13 @@ namespace XmlRpc.Client
 
         public object Invoke(string methodName, params object[] parameters)
         {
-            var methodInfo = _protocol.GetMethodInfoFromName(this, methodName, parameters);
+            var methodInfo = XmlRpcClientProtocol.GetMethodInfoFromName(this, methodName, parameters);
             return Invoke(methodInfo, parameters);
         }
 
         public object Invoke(MethodInfo methodInfo, params object[] parameters)
         {
-            var request = _protocol.MakeXmlRpcRequest(_id, methodInfo, parameters, XmlRpcMethod);
+            var request = XmlRpcClientProtocol.MakeXmlRpcRequest(_id, methodInfo, parameters, XmlRpcMethod);
 
             using var memoryStream = new MemoryStream();
             var serializer = new XmlRpcRequestSerializer(Configuration);
@@ -66,19 +65,19 @@ namespace XmlRpc.Client
         [XmlRpcMethod("system.listMethods")]
         public string[] SystemListMethods()
         {
-            return (string[])Invoke("SystemListMethods", CancellationToken.None);
+            return (string[])Invoke("SystemListMethods");
         }
 
         [XmlRpcMethod("system.methodSignature")]
         public object[] SystemMethodSignature(string methodName)
         {
-            return (object[])Invoke("SystemMethodSignature", CancellationToken.None, new object[] { methodName });
+            return (object[])Invoke("SystemMethodSignature", new object[] { methodName });
         }
 
         [XmlRpcMethod("system.methodHelp")]
         public string SystemMethodHelp(string methodName)
         {
-            return (string)Invoke("SystemMethodHelp", CancellationToken.None, new object[] { methodName });
+            return (string)Invoke("SystemMethodHelp", new object[] { methodName });
         }
     }
 }

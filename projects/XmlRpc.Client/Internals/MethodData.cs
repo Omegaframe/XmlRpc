@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace XmlRpc.Client
+namespace XmlRpc.Client.Internals
 {
     class MethodData
     {

@@ -1,21 +1,30 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Reflection;
 using System.Reflection.Emit;
 using XmlRpc.Client.Attributes;
 using XmlRpc.Client.Exceptions;
+using XmlRpc.Client.Internals;
+using XmlRpc.Client.Serializer.Model;
 
 namespace XmlRpc.Client
 {
-    public static class XmlRpcProxyGen
+    public static class XmlRpcClientBuilder
     {
         static readonly Hashtable _types = new Hashtable();
 
-        public static T Create<T>(HttpClient client) where T : IXmlRpcProxy
+        public static T Create<T>(HttpClient client) where T : IXmlRpcClient
         {
             return (T)Create(typeof(T), client);
+        }
+
+        public static T Create<T>(HttpClient client, SerializerConfig config) where T : IXmlRpcClient
+        {
+            var serviceClient = (T)Create(typeof(T), client);
+            serviceClient.Configuration = config;
+
+            return serviceClient;
         }
 
         public static object Create(Type serviceType, HttpClient client)
@@ -23,8 +32,8 @@ namespace XmlRpc.Client
             if (!serviceType.IsInterface)
                 throw new XmlRpcServiceIsNoInterfaceException($"Requested Type {serviceType.Name} is no interface but has to be one.");
 
-            if (!typeof(IXmlRpcProxy).IsAssignableFrom(serviceType))
-                throw new XmlRpcServiceInterfaceNotImplementedException($"Requested Type {serviceType.Name} does not implement required interface {nameof(IXmlRpcProxy)}");
+            if (!typeof(IXmlRpcClient).IsAssignableFrom(serviceType))
+                throw new XmlRpcServiceInterfaceNotImplementedException($"Requested Type {serviceType.Name} does not implement required interface {nameof(IXmlRpcClient)}");
 
             var proxyType = (Type)_types[serviceType] ?? BuildServiceType(serviceType);
             return Activator.CreateInstance(proxyType, new[] { client });
@@ -43,8 +52,7 @@ namespace XmlRpc.Client
 
         static AssemblyBuilder BuildAssembly(Type serviceType, string name, string typeName, AssemblyBuilderAccess access)
         {
-            var methods = GetXmlRpcMethods(serviceType);
-
+            var methods = XmlRpcClientProtocol.GetXmlRpcMethods(serviceType);
             var assemblyName = new AssemblyName { Name = name };
 
             if (access == AssemblyBuilderAccess.Run)
@@ -178,46 +186,17 @@ namespace XmlRpc.Client
 
         static void BuildConstructor(TypeBuilder typeBuilder, Type baseType)
         {
+            var baseObject = typeof(object).GetConstructor(Array.Empty<Type>());
             var ctorInfo = baseType.GetConstructor(new[] { typeof(HttpClient) });
-            var ctorBuilder = typeBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.HasThis, new[] { typeof(HttpClient) });
-
-            var conObj = typeof(object).GetConstructor(new Type[0]);
+            var ctorBuilder = typeBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.HasThis, new[] { typeof(HttpClient) });            
 
             var ilgen = ctorBuilder.GetILGenerator();
             ilgen.Emit(OpCodes.Ldarg_0);
-            ilgen.Emit(OpCodes.Call, conObj);
+            ilgen.Emit(OpCodes.Call, baseObject);
             ilgen.Emit(OpCodes.Ldarg_0);
             ilgen.Emit(OpCodes.Ldarg_1);
             ilgen.Emit(OpCodes.Call, ctorInfo);
             ilgen.Emit(OpCodes.Ret);
-        }
-
-        static MethodData[] GetXmlRpcMethods(Type serviceType)
-        {
-            var xmlRpcMethodInfos = new List<MethodData>();
-            foreach (var methodInfo in SystemHelper.GetMethods(serviceType))
-            {
-                var xmlRpcName = GetXmlRpcMethodName(methodInfo);
-                if (string.IsNullOrWhiteSpace(xmlRpcName))
-                    continue;
-
-                var parameterInfos = methodInfo.GetParameters();
-                var hasParamsParameter = Attribute.IsDefined(parameterInfos[^1], typeof(ParamArrayAttribute));
-                var methodData = new MethodData(methodInfo, xmlRpcName, hasParamsParameter);
-
-                xmlRpcMethodInfos.Add(methodData);
-            }
-
-            return xmlRpcMethodInfos.ToArray();
-        }
-
-        static string GetXmlRpcMethodName(MethodInfo methodInfo)
-        {
-            var attribute = Attribute.GetCustomAttribute(methodInfo, typeof(XmlRpcMethodAttribute));
-            if (attribute is XmlRpcMethodAttribute xmlAttribute)
-                return string.IsNullOrWhiteSpace(xmlAttribute.Method) ? methodInfo.Name : xmlAttribute.Method;
-
-            return null;
         }
     }
 }

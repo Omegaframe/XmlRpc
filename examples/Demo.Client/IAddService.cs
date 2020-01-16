@@ -3,7 +3,7 @@ using Demo.Contracts;
 
 namespace XmlRpc.Core.ClientDemo
 {
-    public interface IAddServiceProxy : IXmlRpcProxy, IAddService
+    public interface IAddServiceProxy : IXmlRpcClient, IAddService
     {
     }
 }

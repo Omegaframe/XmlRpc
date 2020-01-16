@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace XmlRpc.Client
+namespace XmlRpc.Client.Internals
 {
     static class SystemHelper
     {
