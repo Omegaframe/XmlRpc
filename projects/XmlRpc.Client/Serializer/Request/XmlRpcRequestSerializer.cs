@@ -21,9 +21,9 @@ namespace XmlRpc.Client.Serializer.Request
 
             xtw.WriteStartDocument();
             xtw.WriteStartElement("", "methodCall", "");
-            xtw.WriteElementString("methodName", request.xmlRpcMethod ?? request.method);
+            xtw.WriteElementString("methodName", request.Method);
 
-            if (request.args.Length > 0 || Configuration.UseEmptyParamsTag)
+            if (request.Arguments.Length > 0 || Configuration.UseEmptyParamsTag)
                 WriteArguments(request, xtw);
 
             xtw.WriteEndElement();
@@ -36,7 +36,7 @@ namespace XmlRpc.Client.Serializer.Request
             {
                 xtw.WriteStartElement("", "params", "");
 
-                if (!IsStructParamsMethod(request.mi))
+                if (!IsStructParamsMethod(request.MethodInfo))
                     SerializeParams(xtw, request);
                 else
                     SerializeStructParams(xtw, request);
@@ -51,25 +51,25 @@ namespace XmlRpc.Client.Serializer.Request
 
         void SerializeParams(XmlTextWriter xtw, XmlRpcRequest request)
         {
-            var parameterInfos = request.mi?.GetParameters();
+            var parameterInfos = request.MethodInfo?.GetParameters();
 
-            if (parameterInfos != null && parameterInfos.Length != request.args.Length)
+            if (parameterInfos != null && parameterInfos.Length != request.Arguments.Length)
                 throw new XmlRpcInvalidParametersException("Number of request parameters does not match number of proxy method parameters.");
 
-            if (request.args.Any(a => a == null))
+            if (request.Arguments.Any(a => a == null))
                 throw new XmlRpcNullParameterException($"Null method parameter not allowed.");
 
-            for (int i = 0; i < request.args.Length; i++)
+            for (int i = 0; i < request.Arguments.Length; i++)
             {
                 if (parameterInfos != null && Attribute.IsDefined(parameterInfos[i], typeof(ParamArrayAttribute)))
                 {
-                    var arry = (Array)request.args[i];
+                    var arry = (Array)request.Arguments[i];
                     WriteParamsParameter(arry, xtw);
                     break;
                 }
 
                 xtw.WriteStartElement("", "param", "");
-                Serialize(xtw, request.args[i]);
+                Serialize(xtw, request.Arguments[i]);
                 xtw.WriteEndElement();
             }
         }
@@ -89,27 +89,27 @@ namespace XmlRpc.Client.Serializer.Request
 
         void SerializeStructParams(XmlTextWriter xtw, XmlRpcRequest request)
         {
-            var parameterInfos = request.mi.GetParameters();
+            var parameterInfos = request.MethodInfo.GetParameters();
 
-            if (request.args.Any(a => a == null))
+            if (request.Arguments.Any(a => a == null))
                 throw new XmlRpcNullParameterException($"Null method parameter not allowed.");
 
-            if (request.args.Length != parameterInfos.Length)
+            if (request.Arguments.Length != parameterInfos.Length)
                 throw new XmlRpcInvalidParametersException("Number of request parameters does not match number of proxy method parameters.");
 
-            if (Attribute.IsDefined(parameterInfos[request.args.Length - 1], typeof(ParamArrayAttribute)))
+            if (Attribute.IsDefined(parameterInfos[request.Arguments.Length - 1], typeof(ParamArrayAttribute)))
                 throw new XmlRpcInvalidParametersException("params parameter cannot be used with StructParams.");
 
             xtw.WriteStartElement("", "param", "");
             xtw.WriteStartElement("", "value", "");
             xtw.WriteStartElement("", "struct", "");
 
-            for (int i = 0; i < request.args.Length; i++)
+            for (int i = 0; i < request.Arguments.Length; i++)
             {
                 xtw.WriteStartElement("", "member", "");
                 xtw.WriteElementString("name", parameterInfos[i].Name);
 
-                Serialize(xtw, request.args[i]);
+                Serialize(xtw, request.Arguments[i]);
 
                 xtw.WriteEndElement();
             }

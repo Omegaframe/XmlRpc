@@ -44,12 +44,7 @@ namespace XmlRpc.Client.Serializer.Request
             if (paramsParameter != null)
                 methodParameter.Add(paramsParameter);
 
-            return new XmlRpcRequest
-            {
-                method = calledMethod,
-                mi = methodInfo,
-                args = methodParameter.ToArray()
-            };
+            return new XmlRpcRequest(calledMethod, methodParameter.ToArray(), methodInfo);
         }
 
         string FindCalledMethod(XmlDocument xdoc)

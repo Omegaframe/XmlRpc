@@ -29,10 +29,10 @@ namespace XmlRpc.Client.Internals
             return xmlRpcMethodInfos.ToArray();
         }
 
-        public static XmlRpcRequest MakeXmlRpcRequest(Guid id, MethodInfo methodInfo, object[] parameters, string xmlRpcMethod)
+        public static XmlRpcRequest MakeXmlRpcRequest(MethodInfo methodInfo, object[] parameters)
         {
             var rpcMethodName = GetXmlRpcMethodNameOrThrow(methodInfo);
-            return new XmlRpcRequest(rpcMethodName, parameters, methodInfo, xmlRpcMethod, id);
+            return new XmlRpcRequest(rpcMethodName, parameters, methodInfo);
         }
 
         public static MethodInfo GetMethodInfoFromName(object clientObj, string methodName, object[] parameters)

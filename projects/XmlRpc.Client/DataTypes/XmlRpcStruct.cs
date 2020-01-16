@@ -14,7 +14,7 @@ namespace XmlRpc.Client.DataTypes
             if (!(key is string))
                 throw new ArgumentException("XmlRpcStruct key must be a string.");
 
-            if (XmlRpcServiceInfo.GetXmlRpcType(value.GetType()) == XmlRpcType.tInvalid)
+            if (XmlRpcServiceInfo.GetXmlRpcType(value.GetType()) == XmlRpcType.Invalid)
                 throw new ArgumentException($"Type {value.GetType()} cannot be mapped to an XML-RPC type");
 
             base.Add(key, value);
@@ -33,7 +33,7 @@ namespace XmlRpc.Client.DataTypes
                 if (!(key is string))
                     throw new ArgumentException("XmlRpcStruct key must be a string.");
 
-                if (XmlRpcServiceInfo.GetXmlRpcType(value.GetType()) == XmlRpcType.tInvalid)
+                if (XmlRpcServiceInfo.GetXmlRpcType(value.GetType()) == XmlRpcType.Invalid)
                     throw new ArgumentException($"Type {value.GetType()} cannot be mapped to an XML-RPC type");
 
                 base[key] = value;

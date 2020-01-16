@@ -2,16 +2,11 @@
 {
     public class XmlRpcResponse
     {
-        public XmlRpcResponse()
-        {
-            retVal = null;
-        }
+        public object ReturnValue { get; set; }
 
-        public XmlRpcResponse(object retValue)
+        public XmlRpcResponse(object returnValue)
         {
-            retVal = retValue;
-        }
-
-        public object retVal;
+            ReturnValue = returnValue;
+        }        
     }
 }

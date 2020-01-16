@@ -9,7 +9,7 @@ namespace XmlRpc.Client.Serializer.Response
     {
         public void SerializeResponse(Stream inputStream, XmlRpcResponse response)
         {
-            var returnValue = response.retVal;
+            var returnValue = response.ReturnValue;
             if (returnValue is XmlRpcFaultException)
             {
                 SerializeFaultResponse(inputStream, (XmlRpcFaultException)returnValue);

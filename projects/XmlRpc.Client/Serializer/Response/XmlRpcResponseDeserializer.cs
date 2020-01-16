@@ -62,12 +62,12 @@ namespace XmlRpc.Client.Serializer.Response
             if (valueNode == null)
                 throw new XmlRpcInvalidXmlRpcException("Response XML not valid XML-RPC - missing value element.");
 
-            var response = new XmlRpcResponse { retVal = null };
+            var response = new XmlRpcResponse(null);
             if (returnType != typeof(void))
             {
                 var parseStack = new ParseStack("response");
                 var node = valueNode.SelectValueNode();
-                response.retVal = parser.ParseValue(node, returnType, parseStack);
+                response.ReturnValue = parser.ParseValue(node, returnType, parseStack);
             }
 
             return response;

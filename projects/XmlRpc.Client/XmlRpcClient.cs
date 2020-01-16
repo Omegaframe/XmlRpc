@@ -14,9 +14,7 @@ namespace XmlRpc.Client
     public class XmlRpcClient : IXmlRpcClient
     {
         public SerializerConfig Configuration { get; set; }
-        public string XmlRpcMethod { get; set; }
 
-        readonly Guid _id;
         readonly HttpClient _client;
 
         public XmlRpcClient(HttpClient client)
@@ -24,7 +22,6 @@ namespace XmlRpc.Client
             Configuration = new SerializerConfig();
 
             _client = client;
-            _id = Guid.NewGuid();
         }
 
         public object Invoke(MethodBase methodBase, params object[] parameters)
@@ -40,7 +37,7 @@ namespace XmlRpc.Client
 
         public object Invoke(MethodInfo methodInfo, params object[] parameters)
         {
-            var request = XmlRpcClientProtocol.MakeXmlRpcRequest(_id, methodInfo, parameters, XmlRpcMethod);
+            var request = XmlRpcClientProtocol.MakeXmlRpcRequest(methodInfo, parameters);
 
             using var memoryStream = new MemoryStream();
             var serializer = new XmlRpcRequestSerializer(Configuration);
@@ -58,8 +55,8 @@ namespace XmlRpc.Client
 
             using var responseStream = response.Content.ReadAsStreamAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             var deserializer = new XmlRpcResponseDeserializer(Configuration);
-            var responseAnswer = deserializer.DeserializeResponse(responseStream, request.mi.ReturnType);
-            return responseAnswer.retVal;
+            var responseAnswer = deserializer.DeserializeResponse(responseStream, request.MethodInfo.ReturnType);
+            return responseAnswer.ReturnValue;
         }
 
         [XmlRpcMethod("system.listMethods")]

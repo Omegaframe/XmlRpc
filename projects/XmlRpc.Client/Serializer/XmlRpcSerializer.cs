@@ -56,7 +56,7 @@ namespace XmlRpc.Client.Serializer
             xtw.WriteStartElement("", "value", "");
             var xType = XmlRpcServiceInfo.GetXmlRpcType(targetObject.GetType());
 
-            if (xType == XmlRpcType.tArray)
+            if (xType == XmlRpcType.Array)
             {
                 xtw.WriteStartElement("", "array", "");
                 xtw.WriteStartElement("", "data", "");
@@ -72,20 +72,20 @@ namespace XmlRpc.Client.Serializer
                 xtw.WriteEndElement();
                 xtw.WriteEndElement();
             }
-            else if (xType == XmlRpcType.tMultiDimArray)
+            else if (xType == XmlRpcType.MultiDimArray)
             {
                 var mda = (Array)targetObject;
                 var indices = new int[mda.Rank];
                 BuildArrayXml(xtw, mda, 0, indices, nestedObjs);
             }
-            else if (xType == XmlRpcType.tBase64)
+            else if (xType == XmlRpcType.Base64)
             {
                 var buf = (byte[])targetObject;
                 xtw.WriteStartElement("", "base64", "");
                 xtw.WriteBase64(buf, 0, buf.Length);
                 xtw.WriteEndElement();
             }
-            else if (xType == XmlRpcType.tBoolean)
+            else if (xType == XmlRpcType.Boolean)
             {
                 bool boolVal;
                 if (targetObject is bool)
@@ -98,7 +98,7 @@ namespace XmlRpc.Client.Serializer
                 else
                     xtw.WriteElementString("boolean", "0");
             }
-            else if (xType == XmlRpcType.tDateTime)
+            else if (xType == XmlRpcType.DateTime)
             {
                 DateTime dt;
                 if (targetObject is DateTime)
@@ -109,7 +109,7 @@ namespace XmlRpc.Client.Serializer
                 var sdt = dt.ToString("yyyyMMdd'T'HH':'mm':'ss", DateTimeFormatInfo.InvariantInfo);
                 xtw.WriteElementString("dateTime.iso8601", sdt);
             }
-            else if (xType == XmlRpcType.tDouble)
+            else if (xType == XmlRpcType.Double)
             {
                 double doubleVal;
                 if (targetObject is double)
@@ -119,7 +119,7 @@ namespace XmlRpc.Client.Serializer
 
                 xtw.WriteElementString("double", doubleVal.ToString(null, CultureInfo.InvariantCulture));
             }
-            else if (xType == XmlRpcType.tHashtable)
+            else if (xType == XmlRpcType.Hashtable)
             {
                 xtw.WriteStartElement("", "struct", "");
                 var xrs = targetObject as XmlRpcStruct;
@@ -137,25 +137,25 @@ namespace XmlRpc.Client.Serializer
 
                 xtw.WriteEndElement();
             }
-            else if (xType == XmlRpcType.tInt32)
+            else if (xType == XmlRpcType.Int32)
             {
                 if (Configuration.UseIntTag)
                     xtw.WriteElementString("int", targetObject.ToString());
                 else
                     xtw.WriteElementString("i4", targetObject.ToString());
             }
-            else if (xType == XmlRpcType.tInt64)
+            else if (xType == XmlRpcType.Int64)
             {
                 xtw.WriteElementString("i8", targetObject.ToString());
             }
-            else if (xType == XmlRpcType.tString)
+            else if (xType == XmlRpcType.String)
             {
                 if (Configuration.UseStringTag)
                     xtw.WriteElementString("string", (string)targetObject);
                 else
                     xtw.WriteString((string)targetObject);
             }
-            else if (xType == XmlRpcType.tStruct)
+            else if (xType == XmlRpcType.Struct)
             {
                 xtw.WriteStartElement("", "struct", "");
                 var mis = targetObject.GetType().GetMembers();
@@ -225,7 +225,7 @@ namespace XmlRpc.Client.Serializer
 
                 xtw.WriteEndElement();
             }
-            else if (xType == XmlRpcType.tVoid)
+            else if (xType == XmlRpcType.Void)
             {
                 xtw.WriteElementString("string", "");
             }

@@ -178,7 +178,7 @@ namespace XmlRpc.Client.Serializer.Parser
             if (valueType != null)
             {
                 XmlRpcType xmlRpcType = XmlRpcServiceInfo.GetXmlRpcType(valueType);
-                if (xmlRpcType == XmlRpcType.tMultiDimArray)
+                if (xmlRpcType == XmlRpcType.MultiDimArray)
                 {
                     parseStack.Push("array mapped to type " + valueType.Name);
                     object ret = ParseMultiDimArray(node, valueType, parseStack);

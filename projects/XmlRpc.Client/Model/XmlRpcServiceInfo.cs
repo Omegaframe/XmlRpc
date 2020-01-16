@@ -161,60 +161,60 @@ namespace XmlRpc.Client.Model
         {
             XmlRpcType ret;
             if (t == typeof(int))
-                ret = XmlRpcType.tInt32;
+                ret = XmlRpcType.Int32;
             else if (t == typeof(XmlRpcInt))
-                ret = XmlRpcType.tInt32;
+                ret = XmlRpcType.Int32;
             else if (t == typeof(long))
-                ret = XmlRpcType.tInt64;
+                ret = XmlRpcType.Int64;
             else if (t == typeof(bool))
-                ret = XmlRpcType.tBoolean;
+                ret = XmlRpcType.Boolean;
             else if (t == typeof(XmlRpcBoolean))
-                ret = XmlRpcType.tBoolean;
+                ret = XmlRpcType.Boolean;
             else if (t == typeof(string))
-                ret = XmlRpcType.tString;
+                ret = XmlRpcType.String;
             else if (t == typeof(double))
-                ret = XmlRpcType.tDouble;
+                ret = XmlRpcType.Double;
             else if (t == typeof(XmlRpcDouble))
-                ret = XmlRpcType.tDouble;
+                ret = XmlRpcType.Double;
             else if (t == typeof(DateTime))
-                ret = XmlRpcType.tDateTime;
+                ret = XmlRpcType.DateTime;
             else if (t == typeof(XmlRpcDateTime))
-                ret = XmlRpcType.tDateTime;
+                ret = XmlRpcType.DateTime;
             else if (t == typeof(byte[]))
-                ret = XmlRpcType.tBase64;
+                ret = XmlRpcType.Base64;
             else if (t == typeof(XmlRpcStruct))
-                ret = XmlRpcType.tHashtable;
+                ret = XmlRpcType.Hashtable;
             else if (t == typeof(Array))
-                ret = XmlRpcType.tArray;
+                ret = XmlRpcType.Array;
             else if (t.IsArray)
             {
 
                 var elemType = t.GetElementType();
-                if (elemType != typeof(object) && GetXmlRpcType(elemType, typeStack) == XmlRpcType.tInvalid)
+                if (elemType != typeof(object) && GetXmlRpcType(elemType, typeStack) == XmlRpcType.Invalid)
                 {
-                    ret = XmlRpcType.tInvalid;
+                    ret = XmlRpcType.Invalid;
                 }
                 else
                 {
                     if (t.GetArrayRank() == 1)  // single dim array
-                        ret = XmlRpcType.tArray;
+                        ret = XmlRpcType.Array;
                     else
-                        ret = XmlRpcType.tMultiDimArray;
+                        ret = XmlRpcType.MultiDimArray;
                 }
             }
 
             else if (t == typeof(int?))
-                ret = XmlRpcType.tInt32;
+                ret = XmlRpcType.Int32;
             else if (t == typeof(long?))
-                ret = XmlRpcType.tInt64;
+                ret = XmlRpcType.Int64;
             else if (t == typeof(bool?))
-                ret = XmlRpcType.tBoolean;
+                ret = XmlRpcType.Boolean;
             else if (t == typeof(double?))
-                ret = XmlRpcType.tDouble;
+                ret = XmlRpcType.Double;
             else if (t == typeof(DateTime?))
-                ret = XmlRpcType.tDateTime;
+                ret = XmlRpcType.DateTime;
             else if (t == typeof(void))
-                ret = XmlRpcType.tVoid;
+                ret = XmlRpcType.Void;
             else if ((t.IsValueType && !t.IsPrimitive && !t.IsEnum) || t.IsClass)
             {
                 // if type is class or class its only valid for XML-RPC mapping if all 
@@ -231,8 +231,8 @@ namespace XmlRpc.Client.Model
                         try
                         {
                             typeStack.Push(fi.FieldType);
-                            if ((fi.FieldType != typeof(object) && GetXmlRpcType(fi.FieldType, typeStack) == XmlRpcType.tInvalid))
-                                return XmlRpcType.tInvalid;
+                            if ((fi.FieldType != typeof(object) && GetXmlRpcType(fi.FieldType, typeStack) == XmlRpcType.Invalid))
+                                return XmlRpcType.Invalid;
                         }
                         finally
                         {
@@ -248,8 +248,8 @@ namespace XmlRpc.Client.Model
                         try
                         {
                             typeStack.Push(pi.PropertyType);
-                            if ((pi.PropertyType != typeof(object) && GetXmlRpcType(pi.PropertyType, typeStack) == XmlRpcType.tInvalid))
-                                return XmlRpcType.tInvalid;
+                            if ((pi.PropertyType != typeof(object) && GetXmlRpcType(pi.PropertyType, typeStack) == XmlRpcType.Invalid))
+                                return XmlRpcType.Invalid;
                         }
                         finally
                         {
@@ -257,10 +257,10 @@ namespace XmlRpc.Client.Model
                         }
                     }
                 }
-                ret = XmlRpcType.tStruct;
+                ret = XmlRpcType.Struct;
             }
             else
-                ret = XmlRpcType.tInvalid;
+                ret = XmlRpcType.Invalid;
             return ret;
         }
 
@@ -273,29 +273,29 @@ namespace XmlRpc.Client.Model
         static public string GetXmlRpcTypeString(XmlRpcType t)
         {
             string ret;
-            if (t == XmlRpcType.tInt32)
+            if (t == XmlRpcType.Int32)
                 ret = "integer";
-            else if (t == XmlRpcType.tInt64)
+            else if (t == XmlRpcType.Int64)
                 ret = "i8";
-            else if (t == XmlRpcType.tBoolean)
+            else if (t == XmlRpcType.Boolean)
                 ret = "boolean";
-            else if (t == XmlRpcType.tString)
+            else if (t == XmlRpcType.String)
                 ret = "string";
-            else if (t == XmlRpcType.tDouble)
+            else if (t == XmlRpcType.Double)
                 ret = "double";
-            else if (t == XmlRpcType.tDateTime)
+            else if (t == XmlRpcType.DateTime)
                 ret = "dateTime";
-            else if (t == XmlRpcType.tBase64)
+            else if (t == XmlRpcType.Base64)
                 ret = "base64";
-            else if (t == XmlRpcType.tStruct)
+            else if (t == XmlRpcType.Struct)
                 ret = "struct";
-            else if (t == XmlRpcType.tHashtable)
+            else if (t == XmlRpcType.Hashtable)
                 ret = "struct";
-            else if (t == XmlRpcType.tArray)
+            else if (t == XmlRpcType.Array)
                 ret = "array";
-            else if (t == XmlRpcType.tMultiDimArray)
+            else if (t == XmlRpcType.MultiDimArray)
                 ret = "array";
-            else if (t == XmlRpcType.tVoid)
+            else if (t == XmlRpcType.Void)
                 ret = "void";
             else
                 ret = null;

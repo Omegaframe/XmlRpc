@@ -2,18 +2,18 @@
 {
     public enum XmlRpcType
     {
-        tInvalid,
-        tInt32,
-        tInt64,
-        tBoolean,
-        tString,
-        tDouble,
-        tDateTime,
-        tBase64,
-        tStruct,
-        tHashtable,
-        tArray,
-        tMultiDimArray,
-        tVoid
+        Invalid,
+        Int32,
+        Int64,
+        Boolean,
+        String,
+        Double,
+        DateTime,
+        Base64,
+        Struct,
+        Hashtable,
+        Array,
+        MultiDimArray,
+        Void
     }
 }

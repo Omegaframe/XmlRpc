@@ -4,8 +4,6 @@ namespace XmlRpc.Client
 {
     public interface IXmlRpcClient
     {        
-        string XmlRpcMethod { get; set; }
-
         SerializerConfig Configuration { get; set; }
 
         string[] SystemListMethods();
