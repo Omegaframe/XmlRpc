@@ -1,20 +1,12 @@
-﻿
-
-using XmlRpc.Client.Attributes;
+﻿using XmlRpc.Client.Attributes;
 
 namespace Demo.Contracts
 {
-    /// <summary>
-    ///     XML-RPC Service that adds two numbers
-    /// </summary>
+    // interface defining the methods that should be available for the client to call and the server to execute.
+    // it is required for both, server and client to reference to this interface
     public interface IAddService
     {
-        /// <summary>
-        ///     Adds the numbers.
-        /// </summary>
-        /// <returns> Sum of the numbers .</returns>
-        /// <param name="numberA"> Summand a.</param>
-        /// <param name="numberB"> Summand b.</param>
+        // ensure to use the XmlRpcMethod Attribute on the Methods you want to make available on Xml-Rpc
         [XmlRpcMethod("Demo.addNumbers")]
         int AddNumbers(int numberA, int numberB);
     }

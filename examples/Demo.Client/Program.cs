@@ -9,12 +9,18 @@ namespace XmlRpc.Core.ClientDemo
     {
         static void Main()
         {
-            var client = new HttpClient { BaseAddress = new Uri("http://127.0.0.1:5678/xmlrpc") };
-            var config = new SerializerConfig();
-            var proxy = XmlRpcClientBuilder.Create<IAddServiceProxy>(client, config);
+            // build a httpclient that fits your needs (uri, credentials, certificates, etc..)
+            var httpClient = new HttpClient { BaseAddress = new Uri("http://127.0.0.1:5678/xmlrpc") };
 
+            // prepare a Serializer Configuration or use the default one
+            var config = new SerializerConfig();
+
+            // use the client builder to create an instance of your services' client. ensure your interface extends IXmlRpcClient and your contract interface
+            var xmlRpcClient = XmlRpcClientBuilder.Create<IAddServiceClient>(httpClient, config);
+
+            // call a method of the client and it will be executed on server side
             Console.WriteLine("Calling Demo.addNumbers with [3,4]...");
-            var result = proxy.AddNumbers(3, 4);
+            var result = xmlRpcClient.AddNumbers(3, 4);
             Console.WriteLine("Received result: " + result);
 
             Console.ReadKey();
