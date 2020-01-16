@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Http;
 using XmlRpc.Client;
 
 namespace XmlRpc.Core.ClientDemo
@@ -7,8 +8,8 @@ namespace XmlRpc.Core.ClientDemo
     {
         static void Main(string[] args)
         {
-            var proxy = XmlRpcProxyGen.Create<IAddServiceProxy>();
-            proxy.Url = "http://127.0.0.1:5678/xmlrpc";
+            var client = new HttpClient { BaseAddress = new Uri("http://127.0.0.1:5678/xmlrpc") };
+            var proxy = XmlRpcProxyGen.Create<IAddServiceProxy>(client);
 
             Console.WriteLine("Calling Demo.addNumbers with [3,4]...");
             var result = proxy.AddNumbers(3, 4);

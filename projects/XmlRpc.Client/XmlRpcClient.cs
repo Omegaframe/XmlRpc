@@ -3,40 +3,45 @@ using System.IO;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading;
-using System.Threading.Tasks;
+using XmlRpc.Client.Attributes;
 using XmlRpc.Client.Serializer.Model;
 using XmlRpc.Client.Serializer.Request;
 using XmlRpc.Client.Serializer.Response;
 
 namespace XmlRpc.Client
 {
-    public class XmlRpcClient
+    public class XmlRpcClient : IXmlRpcProxy
     {
         public SerializerConfig Configuration { get; set; }
         public string XmlRpcMethod { get; set; }
 
+        readonly Guid _id;
         readonly HttpClient _client;
         readonly XmlRpcClientProtocol _protocol;
 
-        public XmlRpcClient(Uri endpoint) : this(endpoint, TimeSpan.FromSeconds(180)) { }
-
-        public XmlRpcClient(string endpoint) : this(new Uri(endpoint)) { }
-        public XmlRpcClient(string endpoint, TimeSpan timeout) : this(new Uri(endpoint), timeout) { }
-
-        public XmlRpcClient(Uri endpoint, TimeSpan timeout)
-        {
-            _client = new HttpClient { BaseAddress = endpoint, Timeout = timeout };
-            _protocol = new XmlRpcClientProtocol();
-        }
         public XmlRpcClient(HttpClient client)
         {
+            Configuration = new SerializerConfig();
+
             _client = client;
             _protocol = new XmlRpcClientProtocol();
+            _id = Guid.NewGuid();
         }
 
-        public async Task<object> Invoke(CancellationToken cancellationToken, MethodInfo methodInfo, params object[] parameters)
+        public object Invoke(MethodBase methodBase, params object[] parameters)
         {
-            var request = _protocol.MakeXmlRpcRequest(methodInfo, parameters, XmlRpcMethod);
+            return Invoke(methodBase as MethodInfo, parameters);
+        }
+
+        public object Invoke(string methodName, params object[] parameters)
+        {
+            var methodInfo = _protocol.GetMethodInfoFromName(this, methodName, parameters);
+            return Invoke(methodInfo, parameters);
+        }
+
+        public object Invoke(MethodInfo methodInfo, params object[] parameters)
+        {
+            var request = _protocol.MakeXmlRpcRequest(_id, methodInfo, parameters, XmlRpcMethod);
 
             using var memoryStream = new MemoryStream();
             var serializer = new XmlRpcRequestSerializer(Configuration);
@@ -49,12 +54,31 @@ namespace XmlRpc.Client
                 Content = new StreamContent(memoryStream)
             };
 
-            using var response = await _client.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+            using var response = _client.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
             response.EnsureSuccessStatusCode();
 
-            using var responseStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+            using var responseStream = response.Content.ReadAsStreamAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             var deserializer = new XmlRpcResponseDeserializer(Configuration);
-            return deserializer.DeserializeResponse(responseStream, request.mi.ReturnType);
+            var responseAnswer = deserializer.DeserializeResponse(responseStream, request.mi.ReturnType);
+            return responseAnswer.retVal;
+        }
+
+        [XmlRpcMethod("system.listMethods")]
+        public string[] SystemListMethods()
+        {
+            return (string[])Invoke("SystemListMethods", CancellationToken.None);
+        }
+
+        [XmlRpcMethod("system.methodSignature")]
+        public object[] SystemMethodSignature(string methodName)
+        {
+            return (object[])Invoke("SystemMethodSignature", CancellationToken.None, new object[] { methodName });
+        }
+
+        [XmlRpcMethod("system.methodHelp")]
+        public string SystemMethodHelp(string methodName)
+        {
+            return (string)Invoke("SystemMethodHelp", CancellationToken.None, new object[] { methodName });
         }
     }
 }
