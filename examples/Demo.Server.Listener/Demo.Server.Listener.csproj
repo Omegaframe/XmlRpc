@@ -3,6 +3,11 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp31</TargetFramework>
+    <Authors>Jörn Roddelkopf</Authors>
+    <Company>Omegaframe</Company>
+    <Description>Example on how to use the HttpListener Implementation of XmlRpc.Server</Description>
+    <PackageProjectUrl>https://omegaframe.com/opensource/xmlrpc</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/zeroexploit/XmlRpc</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>

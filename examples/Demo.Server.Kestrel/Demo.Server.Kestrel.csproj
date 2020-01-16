@@ -3,6 +3,11 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp31</TargetFramework>
+    <Authors>Jörn Roddelkopf</Authors>
+    <Company>Omegaframe</Company>
+    <RepositoryUrl>https://github.com/zeroexploit/XmlRpc</RepositoryUrl>
+    <PackageProjectUrl>https://omegaframe.com/opensource/xmlrpc</PackageProjectUrl>
+    <Description>Example on how to use the Kestrel Middleware Implementation of XmlRpc.Server</Description>
   </PropertyGroup>
 
   <ItemGroup>
