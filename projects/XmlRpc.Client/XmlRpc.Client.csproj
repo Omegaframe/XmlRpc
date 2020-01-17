@@ -8,7 +8,7 @@
     <Company>Omegaframe</Company>
     <Version>1.0.0</Version>
     <Copyright>©2020 Omegaframe</Copyright>
-    <PackageTags>xml rpc xmlrpc dotnet core httplistener</PackageTags>
+    <PackageTags>xml rpc xmlrpc dotnet core</PackageTags>
     <RepositoryUrl>https://github.com/zeroexploit/XmlRpc</RepositoryUrl>
     <PackageProjectUrl>https://omegaframe.com/opensource/xmlrpc</PackageProjectUrl>
   </PropertyGroup>
