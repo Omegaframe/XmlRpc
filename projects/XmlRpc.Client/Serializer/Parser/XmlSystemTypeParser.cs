@@ -91,7 +91,12 @@ namespace XmlRpc.Client.Serializer.Parser
             {
                 var textbool = node.FirstChild.Value;
                 if (!bool.TryParse(textbool, out var parseResult))
-                    throw new XmlRpcInvalidXmlRpcException("reponse contains invalid boolean value " + parseStack.Dump());
+                {
+                    if (!textbool.Equals("0") && !textbool.Equals("1"))
+                        throw new XmlRpcInvalidXmlRpcException($"reponse contains invalid boolean value '{textbool}' " + parseStack.Dump());
+
+                    parseResult = textbool.Equals("1");
+                }
 
                 return valueType == typeof(XmlRpcBoolean) ? new XmlRpcBoolean(parseResult) : (object)parseResult;
             }

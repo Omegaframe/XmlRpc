@@ -20,7 +20,7 @@ namespace XmlRpc.Client.Internals
                     continue;
 
                 var parameterInfos = methodInfo.GetParameters();
-                var hasParamsParameter = Attribute.IsDefined(parameterInfos[^1], typeof(ParamArrayAttribute));
+                var hasParamsParameter = parameterInfos.Any() ? Attribute.IsDefined(parameterInfos[^1], typeof(ParamArrayAttribute)) : false;
                 var methodData = new MethodData(methodInfo, xmlRpcName, hasParamsParameter);
 
                 xmlRpcMethodInfos.Add(methodData);

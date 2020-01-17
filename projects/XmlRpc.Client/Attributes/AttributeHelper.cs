@@ -41,14 +41,21 @@ namespace XmlRpc.Client.Attributes
             if (valueType == null)
                 return null;
 
-            var fieldAttributes = valueType.GetFields().Select(f => Attribute.GetCustomAttribute(f, typeof(XmlRpcMemberAttribute)));
-            var propertyAttributes = valueType.GetProperties().Select(p => Attribute.GetCustomAttribute(p, typeof(XmlRpcMemberAttribute)));
+            foreach (var field in valueType.GetFields())
+            {
+                var attribute = Attribute.GetCustomAttribute(field, typeof(XmlRpcMemberAttribute)) as XmlRpcMemberAttribute;
+                if (attribute.Member.Equals(xmlRpcName))
+                    return field.Name;
+            }
 
-            var structName = fieldAttributes.Concat(propertyAttributes)
-                .Where(f => f != null).Cast<XmlRpcMemberAttribute>()
-                .FirstOrDefault(f => f.Member.Equals(xmlRpcName))?.Member;
+            foreach (var property in valueType.GetProperties())
+            {
+                var attribute = Attribute.GetCustomAttribute(property, typeof(XmlRpcMemberAttribute)) as XmlRpcMemberAttribute;
+                if (attribute.Member.Equals(xmlRpcName))
+                    return property.Name;
+            }
 
-            return structName;
+            return null;
         }
     }
 }
