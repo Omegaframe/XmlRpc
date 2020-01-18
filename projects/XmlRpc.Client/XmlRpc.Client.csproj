@@ -3,13 +3,13 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <Description>Xml Rpc Client Implementation for .Net Standard. Use this Package to connect to Xml Rpc Servers.</Description>
-    <PackageId>XmlRpc.Client</PackageId>
+    <PackageId>Omegaframe.XmlRpc.Client</PackageId>
     <Authors>Jörn Roddelkopf</Authors>
     <Company>Omegaframe</Company>
     <Version>1.0.0</Version>
     <Copyright>©2020 Omegaframe</Copyright>
     <PackageTags>xml rpc xmlrpc dotnet core</PackageTags>
-    <RepositoryUrl>https://github.com/zeroexploit/XmlRpc</RepositoryUrl>
+    <RepositoryUrl>https://github.com/Omegaframe/XmlRpc</RepositoryUrl>
     <PackageProjectUrl>https://omegaframe.com/opensource/xmlrpc</PackageProjectUrl>
   </PropertyGroup>
 

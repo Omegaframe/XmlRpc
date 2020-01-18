@@ -6,7 +6,7 @@
     <Authors>Jörn Roddelkopf</Authors>
     <Company>Omegaframe</Company>
     <PackageProjectUrl>https://omegaframe.com/opensource/xmlrpc</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/zeroexploit/XmlRpc</RepositoryUrl>
+    <RepositoryUrl>https://github.com/Omegaframe/XmlRpc</RepositoryUrl>
     <Description>Example on how to create a XmlRpc Contract that can be called from a Client and be executed on the Server.</Description>
   </PropertyGroup>
 

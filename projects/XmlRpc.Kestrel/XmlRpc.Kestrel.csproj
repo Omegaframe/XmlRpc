@@ -8,8 +8,9 @@
     <Description>Kestrel Middleware Implementation of XmlRpc.Server. Use this Package if you want to build a Xml Rpc Server based on Kestrel.</Description>
     <Copyright>©2020 Omegaframe</Copyright>
     <PackageProjectUrl>https://omegaframe.com/opensource/xmlrpc</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/zeroexploit/XmlRpc</RepositoryUrl>
+    <RepositoryUrl>https://github.com/Omegaframe/XmlRpc</RepositoryUrl>
     <PackageTags>xml rpc xmlrpc dotnet core kestrel server</PackageTags>
+    <PackageId>Omegaframe.XmlRpc.Kestrel</PackageId>
   </PropertyGroup>
 
   <ItemGroup>

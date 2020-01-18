@@ -6,10 +6,11 @@
     <Company>Omegaframe</Company>
     <Description>HttpListener Implementation of XmlRpc.Server. Use this Package if you want to build a Xml Rpc Server with a simple HttpListener.GetContext.</Description>
     <Copyright>©2020 Omegaframe</Copyright>
-    <RepositoryUrl>https://github.com/zeroexploit/XmlRpc</RepositoryUrl>
+    <RepositoryUrl>https://github.com/Omegaframe/XmlRpc</RepositoryUrl>
     <PackageTags>xml rpc xmlrpc dotnet core httplistener server</PackageTags>
     <PackageProjectUrl>https://omegaframe.com/opensource/xmlrpc</PackageProjectUrl>
     <Version>1.0.0</Version>
+    <PackageId>Omegaframe.XmlRpc.Listener</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
